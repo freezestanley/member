@@ -80,51 +80,12 @@ access_count: 1
 
 ## 5. 系统指令
 
-### `/brain-ingest`
-用途：摄取原始资料、同步 MemPalace、提炼概念页并回写云端。
+指令定义已迁移至 `~/.claude/commands/`，全局生效：
+- `/brain-query <检索词>` — BM25 检索中央知识库
+- `/brain-ingest` — 提炼当前对话知识写入 vault
+- `/brain-consolidate` — 执行记忆衰减与归档
 
-执行流程：
-1. 运行 `bash scripts/palace_bridge.sh`。
-2. 检查 `_inbox/`、`_inbox/palace_raw/`、`_inbox/global_shared_raw/` 中的新材料。
-3. 判断哪些内容属于公共规范：
-   - 若 Frontmatter 含 `tags: [global]`，或内容明显属于跨项目约定、通用工程规范、共享方法论，则归入 `_inbox/global_shared_raw/`。
-   - 其余视为当前项目私有知识。
-4. 对可沉淀内容做原子化提炼，写入或更新 `wiki/concepts/`。
-5. 为新旧概念页补齐 `[[双向链接]]`，并刷新 `last_activated` 与 `access_count`。
-6. 运行 `bash scripts/vault_sync.sh` 完成同步。
-
-注意：
-- `scripts/palace_bridge.sh` 当前会基于当前 Git 项目名生成 `wing_project_<项目名>`。
-- 该脚本当前已经会执行一次 `mempalace mine ./_inbox/global_shared_raw/ --wing "wing_global_shared"`。
-- `_inbox/` 中原始文件默认视为只读输入，不应直接改写原文。
-
-### `/brain-query <检索词>`
-用途：基于本地 Wiki 做精准回答。
-
-强制流程：
-1. 先执行 `python3 scripts/bm25_search.py "<检索词>"`。
-2. 仅根据脚本返回的 Top 3 结果定位文件。
-3. 精准读取这些命中文件，并以其内容作为回答依据。
-
-禁止事项：
-- 禁止绕过 BM25 直接全局扫描 `wiki/concepts/`。
-- 禁止为了回答 `/brain-query` 先做大面积 Grep。
-
-说明：
-- `scripts/bm25_search.py` 当前会对 `wiki/concepts/` 做 BM25 检索，并结合 `current_weight` 做乘权排序。
-
-### 触发词：`清理过期记忆` / `知识库瘦身`
-用途：执行记忆衰减与归档。
-
-强制流程：
-1. 立即运行 `python3 scripts/memory_manager.py`。
-2. 阅读脚本输出。
-3. 向用户简要汇报哪些笔记被移动到了 `wiki/archive/`。
-
-说明：
-- `scripts/memory_manager.py` 当前会扫描 `wiki/concepts/`。
-- 当笔记 `current_weight` 计算后低于 `0.15` 时，会被移动到 `wiki/archive/`。
-- 当前脚本依据 `initial_weight`、`last_activated`、`access_count` 计算衰减后的权重。
+执行细节见 `~/.claude/commands/brain-*.md`。
 
 ## 6. 执行边界
 - 文档规则必须尽量与仓库中现有脚本行为一致，不能凭空声明系统尚未实现的能力。
