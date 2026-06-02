@@ -8,9 +8,9 @@ code_symbols:
   - OpenClaw
   - randomUUID
 initial_weight: 1.0
-current_weight: 1.0
+current_weight: 1.139
 last_activated: 2026-06-02
-access_count: 1
+access_count: 4
 ---
 
 # 魔改版 vs 官方 SDK 差异对比
@@ -48,13 +48,13 @@ access_count: 1
 
 ## 其他文件差异
 
-| 文件 | Node SDK vs browser-sdk | browser-sdk vs 魔改版 |
-|------|------------------------|-----------------------|
-| `client.ts` | 仅 `randomUUID` 来源不同（`node:crypto` vs `crypto.randomUUID()`） | +1 行 `debugger`（须删除） |
-| `types.ts` | 完全相同 | 完全相同 |
-| `normalize.ts` | 完全相同 | 完全相同 |
-| `event-hub.ts` | 完全相同 | 完全相同 |
-| `index.ts` | 完全相同 | 扩展名 `.js` → `.ts` |
+| 文件             | Node SDK vs browser-sdk                                     | browser-sdk vs 魔改版   |
+| -------------- | ----------------------------------------------------------- | -------------------- |
+| `client.ts`    | 仅 `randomUUID` 来源不同（`node:crypto` vs `crypto.randomUUID()`） | +1 行 `debugger`（须删除） |
+| `types.ts`     | 完全相同                                                        | 完全相同                 |
+| `normalize.ts` | 完全相同                                                        | 完全相同                 |
+| `event-hub.ts` | 完全相同                                                        | 完全相同                 |
+| `index.ts`     | 完全相同                                                        | 扩展名 `.js` → `.ts`    |
 
 ## 边界
 

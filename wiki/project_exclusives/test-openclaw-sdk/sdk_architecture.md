@@ -11,9 +11,9 @@ code_symbols:
   - RpcNamespace
   - useOpenClaw
 initial_weight: 1.0
-current_weight: 1.0
+current_weight: 1.139
 last_activated: 2026-06-02
-access_count: 1
+access_count: 5
 ---
 
 # OpenClaw Browser SDK 架构

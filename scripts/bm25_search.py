@@ -20,13 +20,30 @@ def main():
     if len(sys.argv) < 2:
         print("❌ 错误：请输入检索关键词。")
         sys.exit(1)
-        
-    query_str = " ".join(sys.argv[1:])
+
+    # 支持 --project <项目名> 参数，限定只扫当前项目的 project_exclusives 子目录
+    args = sys.argv[1:]
+    project_filter = None
+    if "--project" in args:
+        idx = args.index("--project")
+        if idx + 1 < len(args):
+            project_filter = args[idx + 1]
+            args = args[:idx] + args[idx + 2:]
+        else:
+            print("❌ 错误：--project 后需跟项目名。")
+            sys.exit(1)
+
+    query_str = " ".join(args)
     doc_paths = []
     corpus = []
-    
-    # 扫描公共域与所有项目的独占域
-    search_dirs = [GLOBAL_DIR, PROJECT_DIR]
+
+    # 扫描公共域；project_exclusives 按 project_filter 决定扫单项目还是全部
+    if project_filter:
+        project_exclusive_dir = os.path.join(PROJECT_DIR, project_filter)
+        search_dirs = [GLOBAL_DIR, project_exclusive_dir]
+    else:
+        search_dirs = [GLOBAL_DIR, PROJECT_DIR]
+
     for search_dir in search_dirs:
         if not os.path.exists(search_dir): continue
         for root, _, files in os.walk(search_dir):

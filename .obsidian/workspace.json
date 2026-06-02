@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "wiki/project_exclusives/test-openclaw-sdk/sdk_architecture.md",
+                "file": "wiki/log.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "sdk_architecture"
+              "title": "log"
             }
           }
         ]
@@ -181,11 +181,20 @@
       "bases:新建数据库": false
     }
   },
-  "active": "47276f943522073b",
+  "active": "591eeaccc5463e57",
   "lastOpenFiles": [
-    "wiki/project_exclusives/test-openclaw-sdk/sdk_diff_node_vs_browser.md",
-    "wiki/project_exclusives/test-openclaw-sdk/sdk_architecture.md",
+    "wiki/global_concepts/wiki-hot-watcher.md",
+    "wiki/global_concepts/wiki-log-format.md",
+    "scripts/com.member.hot-watcher.plist",
+    "scripts/hot_watcher.sh",
+    "scripts/hot_refresh.py",
+    "scripts/log_append.py",
+    "wiki/index.md",
     "wiki/hot.md",
+    "wiki/log.md",
+    "wiki/project_exclusives/test-openclaw-sdk/sdk_architecture.md",
+    "wiki/project_exclusives/test-openclaw-sdk/sdk_diff_node_vs_browser.md",
+    "wiki/global_concepts/team-coding-standards.md",
     "wiki/project_exclusives/test-openclaw-sdk",
     "wiki/project_exclusives/member/全局记忆大脑.md",
     "wiki/projects/demo/concept-b.md",
@@ -199,25 +208,16 @@
     "docs/superpowers/plans/2026-06-02-global-brain.md",
     "docs/superpowers/plans",
     "docs/superpowers/specs/2026-06-02-global-brain-design.md",
-    "docs/superpowers/specs",
-    "docs/superpowers",
-    "docs",
     "README.md",
     "CLAUDE.md",
-    "wiki/index.md",
-    "wiki/log.md",
     "wiki/concepts/项目结构优化.md",
     "_inbox/palace_raw/sso-analysis.md",
     "_inbox/palace_raw/skillcard-impact-analysis.md",
     "_inbox/global_shared_raw/开发总规范.md",
     "wiki/concepts/ClaudeCodeWorkspace.md",
     "_inbox/claude code  kapathy obsidian - Google 搜索/claude code  kapathy obsidian - Google 搜索.md",
-    "_inbox/claude code  kapathy obsidian - Google 搜索",
     "wiki/concepts/claude-mem.md",
     "wiki/concepts/ws-next.md",
-    "wiki/concepts/SSO.md",
-    "wiki/concepts/SkillCard.md",
-    "欢迎.md",
-    "_inbox/灵犀平台V2.4-0604/灵犀平台V2.4-0604.md"
+    "wiki/concepts/SSO.md"
   ]
 }
