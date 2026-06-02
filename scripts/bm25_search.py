@@ -1,5 +1,5 @@
 import os, re, sys, jieba
-from rank_bm25 import BM25Okapi
+from rank_bm25 import BM25Plus
 
 VAULT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SEARCH_DIRS = [
@@ -27,7 +27,7 @@ if len(sys.argv) >= 2:
                         corpus.append(clean_and_tokenize(f.read()))
 
     if corpus:
-        bm25 = BM25Okapi(corpus)
+        bm25 = BM25Plus(corpus)
         doc_scores = bm25.get_scores(clean_and_tokenize(query_str))
         final_results = []
         for idx, path in enumerate(doc_paths):
