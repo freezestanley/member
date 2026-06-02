@@ -1,22 +1,29 @@
 #!/bin/bash
 # scripts/palace_bridge.sh
 
-# 🗂️ 1. 私有知识动态抓取（基于当前激活的 Git 代码库）
-PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
+# 🚨 锁死你本地中央知识库的绝对路径（请将其替换为你电脑上的真实绝对路径）
+BRAIN_DIR="/Users/za-stanlexu/Documents/member/member"
+
+# 1. 动态感知当前开发项目的 Git 边界
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel)")
+else
+    PROJECT_NAME=$(basename "$(pwd)")
+fi
+
 CURRENT_WING="wing_project_${PROJECT_NAME}"
+GLOBAL_WING="wing_global_shared"
 
-echo "📥 [MemPalace] 正在从 Claude Code 历史中挖掘私有项目记忆 -> ${CURRENT_WING}"
+echo "📥 [MemPalace] 正在从当前交互中挖掘项目专用记忆 -> ${CURRENT_WING}"
+# 增量抓取当前项目的专属 Claude 交互数据进入特定 Wing [INDEX]
 mempalace mine ~/.claude/projects/ --wing "${CURRENT_WING}" --mode convos
-mempalace sweep ~/.claude/projects/ --wing "${CURRENT_WING}" --output-dir ./_inbox/palace_raw/ --format=md
+# 将当前项目的原始对话 100% 逐字稿实体化到中央知识库的暂存层 [INDEX]
+mempalace sweep ~/.claude/projects/ --wing "${CURRENT_WING}" --output-dir "${BRAIN_DIR}/_inbox/palace_raw/" --format=md
 
-# 🤖 2. 公共知识自动分流（语义审查与搬运）
-echo "🧠 [LLM-Brain Engine] 正在对 _inbox/ 的零碎剪藏与文档执行全自动路由分流..."
+# 2. 检查并强制增量灌入公共总规范投递箱（File-to-Wing Mapping）
+if [ -d "${BRAIN_DIR}/_inbox/global_shared_raw" ] && [ "$(ls -A ${BRAIN_DIR}/_inbox/global_shared_raw)" ]; then
+    echo "🪐 [MemPalace] 检测到公共总规范投递箱有变动，正在同步注入全局共享域 -> ${GLOBAL_WING}"
+    mempalace mine "${BRAIN_DIR}/_inbox/global_shared_raw/" --wing "${GLOBAL_WING}"
+fi
 
-# 我们用一段轻量 Python 或直接让 Claude 在 Ingest 阶段读取 _inbox/。
-# 规则：如果网页剪藏或文档的 Frontmatter 中包含 tags: [global, share, standard] 
-# 或者由 Claude 判断属于非特定项目的通用规范，则执行以下动作：
-# a. 将文件移动到 _inbox/global_shared_raw/
-# b. 强制运行下行合法的官方命令，精准喂养公共记忆区：
-mempalace mine ./_inbox/global_shared_raw/ --wing "wing_global_shared"
-
-
+echo "✨ [MemPalace] 底层多租户隔离流水抽取完毕。"
