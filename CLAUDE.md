@@ -30,7 +30,7 @@
    - 公共规范域：`mempalace search "$QUERY" --wing "wing_global_shared" --limit 3`
 
 4. 本地 Wiki
-   如果用户显式触发 `/wiki-query`，必须先执行 BM25 检索，再按结果精准读取，不允许先全局 Grep。
+   如果用户显式触发 `/brain-query`，必须先执行 BM25 检索，再按结果精准读取，不允许先全局 Grep。
 
 ## 4. 知识沉淀规范
 
@@ -69,7 +69,7 @@ access_count: 1
 
 ### 4.4 激活刷新
 只要发生以下任一行为，就应刷新对应笔记：
-- 被 `/wiki-query` 命中并用于回答。
+- 被 `/brain-query` 命中并用于回答。
 - 被新笔记引用。
 - 被人工或自动更新内容。
 
@@ -80,7 +80,7 @@ access_count: 1
 
 ## 5. 系统指令
 
-### `/wiki-ingest`
+### `/brain-ingest`
 用途：摄取原始资料、同步 MemPalace、提炼概念页并回写云端。
 
 执行流程：
@@ -98,7 +98,7 @@ access_count: 1
 - 该脚本当前已经会执行一次 `mempalace mine ./_inbox/global_shared_raw/ --wing "wing_global_shared"`。
 - `_inbox/` 中原始文件默认视为只读输入，不应直接改写原文。
 
-### `/wiki-query <检索词>`
+### `/brain-query <检索词>`
 用途：基于本地 Wiki 做精准回答。
 
 强制流程：
@@ -108,7 +108,7 @@ access_count: 1
 
 禁止事项：
 - 禁止绕过 BM25 直接全局扫描 `wiki/concepts/`。
-- 禁止为了回答 `/wiki-query` 先做大面积 Grep。
+- 禁止为了回答 `/brain-query` 先做大面积 Grep。
 
 说明：
 - `scripts/bm25_search.py` 当前会对 `wiki/concepts/` 做 BM25 检索，并结合 `current_weight` 做乘权排序。
