@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "wiki/hot.md",
+                "file": "wiki/project_exclusives/test-openclaw-sdk/sdk_architecture.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "hot"
+              "title": "sdk_architecture"
             }
           }
         ]
@@ -183,10 +183,11 @@
   },
   "active": "47276f943522073b",
   "lastOpenFiles": [
+    "wiki/project_exclusives/test-openclaw-sdk/sdk_diff_node_vs_browser.md",
     "wiki/project_exclusives/test-openclaw-sdk/sdk_architecture.md",
+    "wiki/hot.md",
     "wiki/project_exclusives/test-openclaw-sdk",
     "wiki/project_exclusives/member/全局记忆大脑.md",
-    "wiki/hot.md",
     "wiki/projects/demo/concept-b.md",
     "wiki/concepts/concept-a.md",
     "wiki/concepts/dummy.md",
@@ -217,7 +218,6 @@
     "wiki/concepts/SSO.md",
     "wiki/concepts/SkillCard.md",
     "欢迎.md",
-    "_inbox/灵犀平台V2.4-0604/灵犀平台V2.4-0604.md",
-    "membervenv/lib/python3.14/site-packages/pip-26.1.2.dist-info/licenses/src/pip/_vendor/idna/LICENSE.md"
+    "_inbox/灵犀平台V2.4-0604/灵犀平台V2.4-0604.md"
   ]
 }
