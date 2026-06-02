@@ -1,0 +1,223 @@
+{
+  "main": {
+    "id": "6d9eaca1b688ca41",
+    "type": "split",
+    "children": [
+      {
+        "id": "00c646f7a8fc5a7f",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "591eeaccc5463e57",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "wiki/hot.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "hot"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "4ee8d26e6b2c5863",
+    "type": "split",
+    "children": [
+      {
+        "id": "39816e974ebda352",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "47276f943522073b",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "文件列表"
+            }
+          },
+          {
+            "id": "4ee4f29b7e9346f1",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜索"
+            }
+          },
+          {
+            "id": "2f2fc413783fa6a3",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "书签"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "03f6455192522bca",
+    "type": "split",
+    "children": [
+      {
+        "id": "66057f371d092280",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "822f880a38eb3722",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "反向链接"
+            }
+          },
+          {
+            "id": "a48ed6b3dda3461f",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "出链"
+            }
+          },
+          {
+            "id": "db70a11e17a3f0cc",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "标签"
+            }
+          },
+          {
+            "id": "47aaadadc763db0a",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "添加笔记属性"
+            }
+          },
+          {
+            "id": "d6d69f8fc06b37d5",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "_inbox/灵犀平台V2.4-0604/灵犀平台V2.4-0604.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "灵犀平台V2.4-0604 的大纲"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false,
+      "bases:新建数据库": false
+    }
+  },
+  "active": "47276f943522073b",
+  "lastOpenFiles": [
+    "README.md",
+    "CLAUDE.md",
+    "wiki/index.md",
+    "wiki/log.md",
+    "wiki/hot.md",
+    "wiki/concepts/项目结构优化.md",
+    "_inbox/palace_raw/sso-analysis.md",
+    "_inbox/palace_raw/skillcard-impact-analysis.md",
+    "_inbox/global_shared_raw/开发总规范.md",
+    "wiki/concepts/ClaudeCodeWorkspace.md",
+    "_inbox/claude code  kapathy obsidian - Google 搜索/claude code  kapathy obsidian - Google 搜索.md",
+    "_inbox/claude code  kapathy obsidian - Google 搜索",
+    "_inbox/global_shared_raw",
+    "wiki/concepts/claude-mem.md",
+    "wiki/concepts/ws-next.md",
+    "wiki/concepts/SSO.md",
+    "wiki/concepts/SkillCard.md",
+    "欢迎.md",
+    "_inbox/灵犀平台V2.4-0604/灵犀平台V2.4-0604.md",
+    "_inbox/灵犀平台V2.4-0604",
+    "scripts/vault_sync.sh",
+    "scripts/palace_bridge.sh",
+    "scripts/bm25_search.py",
+    "scripts/memory_manager.py",
+    "membervenv/lib/python3.14/site-packages/pip/_vendor/urllib3/util/__pycache__/util.cpython-314.pyc",
+    "membervenv/lib/python3.14/site-packages/pip/_vendor/urllib3/__pycache__/_request_methods.cpython-314.pyc",
+    "membervenv/lib/python3.14/site-packages/pip/_vendor/urllib3/__pycache__/_base_connection.cpython-314.pyc",
+    "membervenv/lib/python3.14/site-packages/pip-26.1.2.dist-info/licenses/src/pip/_vendor/idna/LICENSE.md",
+    "membervenv/lib/python3.14/site-packages/pip/_vendor/idna/LICENSE.md",
+    "membervenv/lib/python3.14/site-packages/~ip-25.2.dist-info/licenses/src/pip/_vendor/idna/LICENSE.md",
+    "membervenv/lib/python3.14/site-packages/idna-3.17.dist-info/licenses/LICENSE.md",
+    "membervenv/lib/python3.14/site-packages/numpy/random/LICENSE.md",
+    "membervenv/lib/python3.14/site-packages/numpy-2.4.6.dist-info/licenses/numpy/_core/src/npysort/x86-simd-sort/LICENSE.md",
+    "membervenv/lib/python3.14/site-packages/numpy-2.4.6.dist-info/licenses/numpy/random/src/mt19937/LICENSE.md",
+    "membervenv/lib/python3.14/site-packages/numpy-2.4.6.dist-info/licenses/numpy/random/src/distributions/LICENSE.md",
+    "membervenv/lib/python3.14/site-packages/numpy-2.4.6.dist-info/licenses/numpy/random/src/splitmix64/LICENSE.md"
+  ]
+}
