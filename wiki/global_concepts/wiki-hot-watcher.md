@@ -1,7 +1,7 @@
 ---
 type: concept
 created_at: 2026-06-02
-last_modified: 2026-06-02
+last_modified: 2026-06-03
 project: global
 code_symbols:
   - hot_watcher
@@ -9,7 +9,7 @@ code_symbols:
 initial_weight: 1.0
 current_weight: 1.0
 last_activated: 2026-06-02
-access_count: 1
+access_count: 2
 ---
 
 # wiki/hot.md 自动刷新机制

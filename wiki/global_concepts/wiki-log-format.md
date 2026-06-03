@@ -1,7 +1,7 @@
 ---
 type: concept
 created_at: 2026-06-02
-last_modified: 2026-06-02
+last_modified: 2026-06-03
 project: global
 code_symbols:
   - log_append
