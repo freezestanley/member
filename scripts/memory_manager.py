@@ -21,7 +21,8 @@ def calculate_weight(initial_w, last_active_str, access_count):
     days_passed = max(0, (datetime.now() - last_active).days)
     decay_factor = math.pow(2, -(days_passed / HALF_LIFE_DAYS))
     # 频率反向强化
-    frequency_bonus = 1.0 + 0.2 * math.log1p(max(0, access_count - 1))
+    safe_count = max(1, access_count)          # 防御 access_count=0 的极端情况
+    frequency_bonus = 1.0 + 0.2 * math.log(safe_count)
     return round(initial_w * decay_factor * frequency_bonus, 3)
 
 def scan_and_clean():
