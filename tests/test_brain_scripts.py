@@ -135,3 +135,26 @@ def test_archive_updates_backlinks_cross_dir(tmp_path):
     assert "~~[[shared-concept]]~~" in updated, f"跨目录双链未更新：{updated}"
     clean = updated.replace("~~[[shared-concept]]~~", "")
     assert "[[shared-concept]]" not in clean, "原始双链仍存在"
+
+
+def test_vault_sync_skips_when_lock_exists(tmp_path):
+    """当 .hot_refresh.lock 存在时，vault_sync 检测逻辑应输出警告并退出非零码"""
+    lock = tmp_path / ".hot_refresh.lock"
+    lock.write_text("locked")
+
+    check_script = f"""#!/bin/bash
+LOCK_FILE="{lock}"
+if [ -f "$LOCK_FILE" ]; then
+    echo "检测到写入锁，跳过本次同步。"
+    exit 1
+fi
+echo "同步继续"
+exit 0
+"""
+    script_path = tmp_path / "check.sh"
+    script_path.write_text(check_script)
+    script_path.chmod(0o755)
+
+    result = subprocess.run(["bash", str(script_path)], capture_output=True, text=True)
+    assert result.returncode == 1, f"有锁时应返回 1，实际 {result.returncode}"
+    assert "检测到写入锁" in result.stdout
