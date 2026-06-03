@@ -31,24 +31,28 @@ def test_frequency_bonus_increases_with_access():
 import subprocess, os, time
 
 
-def test_hot_refresh_no_torn_write(tmp_path):
-    """两个 hot_refresh.py 进程并发执行，hot.md 内容应完整（不应出现空文件或截断）"""
-    hot_md = tmp_path / "hot.md"
-    lock_path = tmp_path / ".hot_refresh.lock"
-    script = f"""
-import fcntl, time
-lock_path = "{lock_path}"
-hot_path = "{hot_md}"
-with open(lock_path, "w") as lf:
-    fcntl.flock(lf, fcntl.LOCK_EX)
-    time.sleep(0.1)
-    with open(hot_path, "w") as f:
-        f.write("content_from_pid_" + str(__import__("os").getpid()))
-    fcntl.flock(lf, fcntl.LOCK_UN)
-"""
-    procs = [subprocess.Popen(["python3", "-c", script]) for _ in range(3)]
+def test_hot_refresh_no_torn_write():
+    """并发调用真实 hot_refresh.py 时，wiki/hot.md 不应为空且内容完整"""
+    procs = [
+        subprocess.Popen(
+            ["python3", "scripts/hot_refresh.py"],
+            cwd="/Users/za-stanlexu/Documents/member/member",
+            stderr=subprocess.PIPE,
+        )
+        for _ in range(3)
+    ]
+    outputs = []
     for p in procs:
-        p.wait()
+        _, err = p.communicate()
+        outputs.append(err.decode())
+
+    # 至少有 1 个进程被跳过（说明非阻塞锁生效）
+    skipped = sum(1 for o in outputs if "另一进程正在刷新" in o)
+    assert skipped >= 1, f"没有进程被跳过，锁可能未生效。stderr outputs: {outputs}"
+
+    # hot.md 内容完整
+    from pathlib import Path
+
+    hot_md = Path("/Users/za-stanlexu/Documents/member/member/wiki/hot.md")
     content = hot_md.read_text()
-    assert content.startswith("content_from_pid_"), f"文件内容异常: {{content!r}}"
-    assert len(content) > 10, "文件不应为空或截断"
+    assert len(content) > 0, "hot.md 不应为空"

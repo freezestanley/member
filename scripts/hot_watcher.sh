@@ -10,7 +10,7 @@ WIKI_DIR="$(cd "$(dirname "$0")/../wiki" && pwd)"
 SCRIPT="$(cd "$(dirname "$0")" && pwd)/hot_refresh.py"
 HOT_MD="$WIKI_DIR/hot.md"
 COOLDOWN=2   # 秒：同一批变化合并触发，防止短时间内多次刷新
-LOCKFILE="/tmp/hot_refresh.lock"
+LOCKFILE="/Users/za-stanlexu/Documents/member/member/_inbox/.hot_refresh.lock"
 
 echo "[hot_watcher] 启动监听：$WIKI_DIR"
 echo "[hot_watcher] 排除：$HOT_MD"
