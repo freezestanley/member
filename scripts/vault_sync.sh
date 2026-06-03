@@ -15,15 +15,30 @@ MAX_WAIT=10
 waited=0
 
 # 等待 hot_refresh.py 写入锁释放（最多 10 秒）
-# 用 flock -n 探测实际锁持有状态（不依赖文件是否存在，而是探测进程是否持有 flock）
-touch "$WRITE_LOCK"  # 确保文件存在，flock 命令需要文件
-while ! flock -n "$WRITE_LOCK" true && [ "$waited" -lt "$MAX_WAIT" ]; do
+# 用 Python fcntl 探测实际锁持有状态（macOS 兼容，不依赖 GNU flock 命令）
+lock_is_held() {
+    python3 - <<'PYEOF'
+import fcntl, sys
+lock_path = "$WRITE_LOCK"
+try:
+    with open(lock_path, "w") as f:
+        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(f, fcntl.LOCK_UN)
+    sys.exit(1)   # 获锁成功 → 没有进程持有锁 → exit 1（不阻塞）
+except (BlockingIOError, OSError):
+    sys.exit(0)   # 获锁失败 → 有进程持有锁 → exit 0（阻塞中）
+except FileNotFoundError:
+    sys.exit(1)   # 文件不存在 → 无锁 → exit 1
+PYEOF
+}
+
+while lock_is_held && [ "$waited" -lt "$MAX_WAIT" ]; do
     echo "⏳ [同步等待] hot_refresh.py 正在写入，等待 ${waited}s / ${MAX_WAIT}s..."
     sleep 1
     waited=$(( waited + 1 ))
 done
 
-if ! flock -n "$WRITE_LOCK" true; then
+if lock_is_held; then
     echo "⚠️ [同步中止] 写入锁持续超过 ${MAX_WAIT} 秒，本次同步跳过，请手动检查。"
     exit 1
 fi
