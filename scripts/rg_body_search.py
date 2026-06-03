@@ -12,19 +12,14 @@ import os
 import re
 import sys
 
+# 确保 scripts/ 目录在 sys.path 首位，无论从哪个 cwd 调用都能找到 utils.py
+_SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+
+from utils import extract_aliases_as_line
+
 FRONTMATTER_RE = re.compile(r'^---\s*\n.*?\n---\s*\n', re.DOTALL)
-ALIASES_RE = re.compile(r'aliases:\s*\[([^\]]*)\]')
-
-
-def extract_aliases_as_line(text):
-    """从 Frontmatter 提取 aliases 字段值，返回单行字符串（用于注入正文搜索）。
-    支持：aliases: [LLM操作系统, BrainOS] # 注释
-    """
-    m = ALIASES_RE.search(text)
-    if not m:
-        return ""
-    raw = re.sub(r'#.*', '', m.group(1))
-    return " ".join(part.strip() for part in raw.split(",") if part.strip())
 
 
 def search_body(pattern: str, paths: list) -> list:

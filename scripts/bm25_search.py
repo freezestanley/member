@@ -3,26 +3,21 @@ import os
 import re
 import sys
 import pickle
+
+# 确保 scripts/ 目录在 sys.path 首位，无论从哪个 cwd 调用都能找到 utils.py
+_SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+
 import jieba
 from rank_bm25 import BM25Okapi
+from utils import extract_aliases
 
 # 🚨 锁死中央知识库的绝对路径
 BRAIN_DIR = "/Users/za-stanlexu/Documents/member/member"
 GLOBAL_DIR = os.path.join(BRAIN_DIR, "wiki/global_concepts")
 PROJECT_DIR = os.path.join(BRAIN_DIR, "wiki/project_exclusives")
 CACHE_PATH = os.path.join(BRAIN_DIR, "_inbox/.bm25_cache.pkl")
-
-
-def extract_aliases(text):
-    """从 Frontmatter 的 aliases 字段提取别名字符串，用于增强检索容错率。
-    支持格式：aliases: [A, B, C] 或 aliases: [A, B] # 注释
-    """
-    m = re.search(r'aliases:\s*\[([^\]]*)\]', text)
-    if not m:
-        return ""
-    # 去掉行内注释，提取逗号分隔的别名
-    raw = re.sub(r'#.*', '', m.group(1))
-    return " ".join(part.strip() for part in raw.split(",") if part.strip())
 
 
 def clean_and_tokenize(text):
