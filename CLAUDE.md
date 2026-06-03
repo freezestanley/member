@@ -47,6 +47,8 @@
 type: concept
 created_at: 2026-06-01
 last_modified: 2026-06-01
+project: <global 或项目名>
+aliases: []              # 概念别名或缩写，增强检索容错率，如 [LLM操作系统, BrainOS]
 code_symbols: []
 initial_weight: 1.0
 current_weight: 1.0
@@ -56,6 +58,8 @@ access_count: 1
 ```
 
 字段含义：
+- `project`: 归属域，值为 `global`（通用）或具体项目名（专属）。
+- `aliases`: 别名或缩写列表，格式 `[别名A, 别名B]`。BM25 和 rg_body_search 会提取此字段并注入检索流，防止因缩写或惯用称呼导致搜不到。
 - `code_symbols`: 关联的函数、类、模块或关键符号。
 - `initial_weight`: 初始权威度，范围建议 `0.1 ~ 1.0`。
 - `current_weight`: 当前记忆权重，由脚本更新。

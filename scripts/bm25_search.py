@@ -13,11 +13,27 @@ PROJECT_DIR = os.path.join(BRAIN_DIR, "wiki/project_exclusives")
 CACHE_PATH = os.path.join(BRAIN_DIR, "_inbox/.bm25_cache.pkl")
 
 
+def extract_aliases(text):
+    """从 Frontmatter 的 aliases 字段提取别名字符串，用于增强检索容错率。
+    支持格式：aliases: [A, B, C] 或 aliases: [A, B] # 注释
+    """
+    m = re.search(r'aliases:\s*\[([^\]]*)\]', text)
+    if not m:
+        return ""
+    # 去掉行内注释，提取逗号分隔的别名
+    raw = re.sub(r'#.*', '', m.group(1))
+    return " ".join(part.strip() for part in raw.split(",") if part.strip())
+
+
 def clean_and_tokenize(text):
-    """剥离 Frontmatter 和 Markdown 杂质，仅保留干净文本用于 TF-IDF 计算。"""
+    """剥离 Frontmatter 和 Markdown 杂质，仅保留干净文本用于 TF-IDF 计算。
+    aliases 字段在剥离前单独提取并追加到 token 流，确保别名可被 BM25 检索。
+    """
+    alias_text = extract_aliases(text)
     text = re.sub(r"---.*?---", "", text, flags=re.DOTALL)
     text = re.sub(r"[\[\]\-\#\*\>\`\n\r]", " ", text)
-    return [word for word in jieba.cut(text.lower()) if word.strip()]
+    combined = text + " " + alias_text
+    return [word for word in jieba.cut(combined.lower()) if word.strip()]
 
 
 def collect_md_paths(search_dirs):

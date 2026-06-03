@@ -13,12 +13,25 @@ import re
 import sys
 
 FRONTMATTER_RE = re.compile(r'^---\s*\n.*?\n---\s*\n', re.DOTALL)
+ALIASES_RE = re.compile(r'aliases:\s*\[([^\]]*)\]')
+
+
+def extract_aliases_as_line(text):
+    """从 Frontmatter 提取 aliases 字段值，返回单行字符串（用于注入正文搜索）。
+    支持：aliases: [LLM操作系统, BrainOS] # 注释
+    """
+    m = ALIASES_RE.search(text)
+    if not m:
+        return ""
+    raw = re.sub(r'#.*', '', m.group(1))
+    return " ".join(part.strip() for part in raw.split(",") if part.strip())
 
 
 def search_body(pattern: str, paths: list) -> list:
     """
     在 paths 中的每个 .md 文件剥离 Frontmatter 后，
     用 re.search(pattern, line, re.IGNORECASE) 逐行匹配。
+    aliases 字段提取后作为虚拟行追加到正文末尾，确保别名可被 rg 检索。
     返回 [{"file": ..., "lineno": ..., "line": ...}, ...]
     """
     compiled = re.compile(pattern, re.IGNORECASE)
@@ -32,6 +45,9 @@ def search_body(pattern: str, paths: list) -> list:
         except Exception:
             continue
 
+        # 提取 aliases（在剥离 Frontmatter 前）
+        alias_line = extract_aliases_as_line(text)
+
         # 剥离 Frontmatter 块
         body = FRONTMATTER_RE.sub("", text, count=1)
 
@@ -39,9 +55,15 @@ def search_body(pattern: str, paths: list) -> list:
         fm_match = FRONTMATTER_RE.match(text)
         fm_lines = fm_match.group(0).count("\n") if fm_match else 0
 
-        for i, line in enumerate(body.splitlines(), start=fm_lines + 1):
+        # alias_line 作为虚拟行追加（行号标记为 0，表示来自别名）
+        lines = body.splitlines()
+        for i, line in enumerate(lines, start=fm_lines + 1):
             if compiled.search(line):
                 results.append({"file": path, "lineno": i, "line": line})
+
+        # 检查 aliases 虚拟行（lineno=0 表示命中别名而非正文）
+        if alias_line and compiled.search(alias_line):
+            results.append({"file": path, "lineno": 0, "line": f"[alias] {alias_line}"})
 
     return results
 
