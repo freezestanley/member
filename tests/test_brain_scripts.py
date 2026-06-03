@@ -158,3 +158,31 @@ exit 0
     result = subprocess.run(["bash", str(script_path)], capture_output=True, text=True)
     assert result.returncode == 1, f"有锁时应返回 1，实际 {result.returncode}"
     assert "检测到写入锁" in result.stdout
+
+
+def test_rg_body_search_excludes_frontmatter(tmp_path):
+    """Frontmatter 中出现的关键词不应被当作正文命中"""
+    md_file = tmp_path / "note.md"
+    md_file.write_text(
+        "---\ntype: concept\nproject: member\ncode_symbols: []\n---\n"
+        "# 标题\n这是正文，不含关键词。\n"
+    )
+    sys.path.insert(0, "scripts")
+    from rg_body_search import search_body
+
+    hits = search_body("member", [str(md_file)])
+    assert len(hits) == 0, f"Frontmatter 中的 'member' 不应被命中，实际：{hits}"
+
+
+def test_rg_body_search_hits_body(tmp_path):
+    """正文中出现的关键词应被命中"""
+    md_file = tmp_path / "note.md"
+    md_file.write_text(
+        "---\ntype: concept\nproject: other\n---\n"
+        "# 标题\n本文讨论 member 架构设计。\n"
+    )
+    from rg_body_search import search_body
+
+    hits = search_body("member", [str(md_file)])
+    assert len(hits) == 1
+    assert "member 架构设计" in hits[0]["line"]
