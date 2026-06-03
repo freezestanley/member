@@ -25,6 +25,39 @@ def calculate_weight(initial_w, last_active_str, access_count):
     frequency_bonus = 1.0 + 0.2 * math.log(safe_count)
     return round(initial_w * decay_factor * frequency_bonus, 3)
 
+def archive_with_backlink_update(note_path: str, archive_dir: str, scan_root: str):
+    """
+    将 note_path 物理移入 archive_dir，并在 scan_root 全库中
+    将所有 [[<note_stem>]] 替换为 ~~[[<note_stem>]]~~（已归档标注）。
+    顺序：先全库替换双链，再移动文件（顺序不能反：移动后路径就找不到了）。
+    """
+    note_stem = os.path.splitext(os.path.basename(note_path))[0]
+    old_link = f"[[{note_stem}]]"
+    new_link = f"~~[[{note_stem}]]~~"
+
+    for root, _, files in os.walk(scan_root):
+        for fname in files:
+            if not fname.endswith(".md"):
+                continue
+            fp = os.path.join(root, fname)
+            if fp == note_path:
+                continue  # 跳过被归档文件自身
+            try:
+                with open(fp, "r", encoding="utf-8") as f:
+                    content = f.read()
+                if old_link in content:
+                    updated = content.replace(old_link, new_link)
+                    with open(fp, "w", encoding="utf-8") as f:
+                        f.write(updated)
+                    print(f"   ↳ [断链修复] {fname}: {old_link} → {new_link}")
+            except Exception as e:
+                print(f"   ↳ [断链修复失败] {fname}: {e}")
+
+    if not os.path.exists(archive_dir):
+        os.makedirs(archive_dir)
+    os.rename(note_path, os.path.join(archive_dir, os.path.basename(note_path)))
+
+
 def scan_and_clean():
     target_dirs = [GLOBAL_DIR, PROJECT_DIR]
     for target_dir in target_dirs:
@@ -52,8 +85,7 @@ def scan_and_clean():
                 
                 if new_w < FORGET_THRESHOLD:
                     print(f"⚠️ [冷冻归档] 检测到过时边缘知识: {file} (当前权重: {new_w}) -> 物理移入冷冻区。")
-                    if not os.path.exists(ARCHIVE_DIR): os.makedirs(ARCHIVE_DIR)
-                    os.rename(path, os.path.join(ARCHIVE_DIR, file))
+                    archive_with_backlink_update(path, ARCHIVE_DIR, target_dir)
                 else:
                     with open(path, "w", encoding="utf-8") as f: f.write(new_content)
 
