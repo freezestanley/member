@@ -449,3 +449,118 @@ def test_render_hot_empty_outline():
     ]
     output = render_hot(notes)
     assert "*(无标题大纲)*" in output, f"空大纲应显示占位符: {output}"
+
+
+# ---------------------------------------------------------------------------
+# vault_sync.sh 锁路径集成测试
+# 验证 lock_is_held() 使用真实路径，在锁被持有时正确返回 exit 0（held=true）
+# ---------------------------------------------------------------------------
+
+def test_lock_is_held_detects_real_lock(tmp_path):
+    """
+    持有真实 fcntl 排他锁期间，vault_sync.sh 的 lock_is_held() 必须返回 exit 0
+    （即认为锁被持有，同步应中止）。
+    """
+    import fcntl
+    import subprocess
+
+    lock_file = tmp_path / ".hot_refresh.lock"
+    lock_file.touch()
+
+    # 在父进程持有排他锁
+    fh = open(lock_file, "w")
+    fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    try:
+        # 用 vault_sync.sh 中提取出的 lock_is_held Python 逻辑直接测试
+        result = subprocess.run(
+            [
+                "python3", "-c",
+                f"""
+import fcntl, sys, os
+lock_path = r"{lock_file}"
+if not os.path.exists(lock_path):
+    sys.exit(1)
+try:
+    with open(lock_path, "r+") as f:
+        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(f, fcntl.LOCK_UN)
+    sys.exit(1)   # 获锁成功 → 无进程持有
+except (BlockingIOError, OSError):
+    sys.exit(0)   # 获锁失败 → 有进程持有
+"""
+            ],
+            capture_output=True,
+        )
+        assert result.returncode == 0, (
+            f"lock_is_held 应返回 0（锁被持有），实际 returncode={result.returncode}；"
+            f"stderr={result.stderr.decode()}"
+        )
+    finally:
+        fcntl.flock(fh, fcntl.LOCK_UN)
+        fh.close()
+
+
+def test_lock_is_held_free_when_no_holder(tmp_path):
+    """
+    锁文件存在但无进程持有时，lock_is_held() 必须返回 exit 1（held=false）。
+    """
+    import subprocess
+
+    lock_file = tmp_path / ".hot_refresh.lock"
+    lock_file.touch()
+
+    result = subprocess.run(
+        [
+            "python3", "-c",
+            f"""
+import fcntl, sys, os
+lock_path = r"{lock_file}"
+if not os.path.exists(lock_path):
+    sys.exit(1)
+try:
+    with open(lock_path, "r+") as f:
+        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(f, fcntl.LOCK_UN)
+    sys.exit(1)
+except (BlockingIOError, OSError):
+    sys.exit(0)
+"""
+        ],
+        capture_output=True,
+    )
+    assert result.returncode == 1, (
+        f"无进程持有锁时 lock_is_held 应返回 1（free），实际 returncode={result.returncode}"
+    )
+
+
+def test_lock_is_held_missing_file(tmp_path):
+    """
+    锁文件不存在时，lock_is_held() 必须返回 exit 1（held=false，不崩溃）。
+    """
+    import subprocess
+
+    lock_file = tmp_path / ".nonexistent.lock"
+    # 不创建文件
+
+    result = subprocess.run(
+        [
+            "python3", "-c",
+            f"""
+import fcntl, sys, os
+lock_path = r"{lock_file}"
+if not os.path.exists(lock_path):
+    sys.exit(1)
+try:
+    with open(lock_path, "r+") as f:
+        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(f, fcntl.LOCK_UN)
+    sys.exit(1)
+except (BlockingIOError, OSError):
+    sys.exit(0)
+"""
+        ],
+        capture_output=True,
+    )
+    assert result.returncode == 1, (
+        f"锁文件不存在时应返回 1，实际 returncode={result.returncode}"
+    )

@@ -8,7 +8,7 @@ code_symbols:
   - OpenClaw
   - randomUUID
 initial_weight: 1.0
-current_weight: 1.139
+current_weight: 1.322
 last_activated: 2026-06-03
 access_count: 5
 ---

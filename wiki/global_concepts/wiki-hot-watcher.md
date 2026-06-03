@@ -7,7 +7,7 @@ code_symbols:
   - hot_watcher
   - hot_refresh
 initial_weight: 1.0
-current_weight: 1.0
+current_weight: 1.113
 last_activated: 2026-06-02
 access_count: 2
 ---

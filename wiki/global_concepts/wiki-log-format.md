@@ -6,7 +6,7 @@ project: global
 code_symbols:
   - log_append
 initial_weight: 1.0
-current_weight: 1.0
+current_weight: 0.977
 last_activated: 2026-06-02
 access_count: 1
 ---
