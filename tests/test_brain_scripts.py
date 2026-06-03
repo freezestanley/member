@@ -186,3 +186,61 @@ def test_rg_body_search_hits_body(tmp_path):
     hits = search_body("member", [str(md_file)])
     assert len(hits) == 1
     assert "member 架构设计" in hits[0]["line"]
+
+
+import pickle, time
+
+
+def test_bm25_cache_created_on_first_run(tmp_path):
+    """首次运行后应生成 .bm25_cache.pkl"""
+    concepts = tmp_path / "wiki" / "global_concepts"
+    concepts.mkdir(parents=True)
+    cache_path = tmp_path / "_inbox" / ".bm25_cache.pkl"
+    (tmp_path / "_inbox").mkdir()
+
+    (concepts / "note1.md").write_text(
+        "---\ncurrent_weight: 1.0\n---\n# 标题\n这是关于 BM25 检索的笔记。\n"
+    )
+
+    build_cmd = f"""
+import sys; sys.path.insert(0, 'scripts')
+import bm25_search as b
+b.GLOBAL_DIR = "{concepts}"
+b.PROJECT_DIR = "{tmp_path / 'wiki' / 'project_exclusives'}"
+b.CACHE_PATH = "{cache_path}"
+b.build_or_load_cache()
+import os; print(os.path.exists("{cache_path}"))
+"""
+    result = subprocess.run(["python3", "-c", build_cmd],
+                            capture_output=True, text=True,
+                            cwd="/Users/za-stanlexu/Documents/member/member")
+    assert "True" in result.stdout, f"缓存文件未生成: {result.stderr}"
+
+
+def test_bm25_cache_not_rebuilt_when_unchanged(tmp_path):
+    """文件未变更时，不应重建索引（cache pkl mtime 保持不变）"""
+    concepts = tmp_path / "wiki" / "global_concepts"
+    concepts.mkdir(parents=True)
+    cache_path = tmp_path / "_inbox" / ".bm25_cache.pkl"
+    (tmp_path / "_inbox").mkdir()
+    (concepts / "note1.md").write_text("---\ncurrent_weight: 1.0\n---\n# 测试\n内容\n")
+
+    build_cmd = f"""
+import sys; sys.path.insert(0, 'scripts')
+import bm25_search as b
+b.GLOBAL_DIR = "{concepts}"
+b.PROJECT_DIR = "{tmp_path / 'wiki' / 'project_exclusives'}"
+b.CACHE_PATH = "{cache_path}"
+b.build_or_load_cache()
+"""
+    subprocess.run(["python3", "-c", build_cmd], capture_output=True,
+                   cwd="/Users/za-stanlexu/Documents/member/member")
+    mtime1 = cache_path.stat().st_mtime
+
+    time.sleep(0.05)
+    subprocess.run(["python3", "-c", build_cmd], capture_output=True,
+                   cwd="/Users/za-stanlexu/Documents/member/member")
+    mtime2 = cache_path.stat().st_mtime
+
+    assert abs(mtime2 - mtime1) < 0.01, \
+        f"文件未变但 cache 被重建（mtime 变了：{mtime1} → {mtime2}）"
