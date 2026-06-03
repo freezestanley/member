@@ -27,11 +27,33 @@ def extract_aliases(text):
 
 def clean_and_tokenize(text):
     """剥离 Frontmatter 和 Markdown 杂质，仅保留干净文本用于 TF-IDF 计算。
-    aliases 字段在剥离前单独提取并追加到 token 流，确保别名可被 BM25 检索。
+
+    处理顺序（顺序不可颠倒）：
+    1. 提取 aliases —— 必须在 Frontmatter 剥离前完成
+    2. 无损剥离 YAML Frontmatter（^---...---\n，锚定行首，避免误匹配正文分隔线）
+    3. 移除 Markdown 注释块（<!-- ... -->）
+    4. 剥离剩余 Markdown 符号（[[、]]、#、*、` 等），保留中英文语义词
+    5. 行级清理：去除行末死空格、Tab
+    6. 连续空行压缩为单空行（减少分词时的空 token 噪声）
+    7. jieba 分词并过滤空白 token
+    aliases 追加到 token 流末尾，确保别名可被 BM25 检索。
     """
+    # Step 1：提取 aliases（必须在 Frontmatter 剥离前）
     alias_text = extract_aliases(text)
-    text = re.sub(r"---.*?---", "", text, flags=re.DOTALL)
-    text = re.sub(r"[\[\]\-\#\*\>\`\n\r]", " ", text)
+
+    # Step 2：无损剥离 YAML Frontmatter（锚定 ^ 行首，避免误匹配正文中的 --- 分隔线）
+    text = re.sub(r'^---[\s\S]+?---\n', '', text, count=1, flags=re.MULTILINE)
+
+    # Step 3：移除 Markdown 注释块（LLM 问答不需要注释内容）
+    text = re.sub(r'<!--[\s\S]*?-->', '', text)
+
+    # Step 4：剥离常见 Markdown 符号，保留语义词
+    text = re.sub(r'[\[\]\#\*\>\`]', ' ', text)
+
+    # Step 5-6：行级清理 + 连续空行压缩
+    lines = [line.rstrip() for line in text.split('\n')]
+    text = re.sub(r'\n{3,}', '\n\n', '\n'.join(lines))
+
     combined = text + " " + alias_text
     return [word for word in jieba.cut(combined.lower()) if word.strip()]
 

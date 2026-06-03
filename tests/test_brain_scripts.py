@@ -323,3 +323,50 @@ for s, name in result:
     top_file = lines[0].split()[-1]
     assert top_file == "with-alias.md", \
         f"有别名的笔记应得分最高，实际排序：{lines}"
+
+
+# ── clean_and_tokenize 压缩策略测试 ───────────────────────────────────────────
+
+def test_clean_tokenize_strips_frontmatter():
+    """Frontmatter 内的字段不应出现在 token 流中"""
+    sys.path.insert(0, "scripts")
+    from bm25_search import clean_and_tokenize
+
+    text = "---\ntype: concept\nproject: global\n---\n# 标题\nBM25 检索效果\n"
+    tokens = clean_and_tokenize(text)
+    # Frontmatter 中的 "concept"、"global" 不应出现
+    assert "concept" not in tokens, f"Frontmatter 字段 'concept' 不应出现在 token 流: {tokens}"
+    assert "global" not in tokens, f"Frontmatter 字段 'global' 不应出现在 token 流: {tokens}"
+    # 正文内容应出现
+    token_str = " ".join(tokens)
+    assert "bm25" in token_str or "检索" in token_str, \
+        f"正文关键词应出现在 token 流: {tokens}"
+
+
+def test_clean_tokenize_strips_html_comment():
+    """Markdown 注释块内的内容不应出现在 token 流中"""
+    from bm25_search import clean_and_tokenize
+
+    text = "---\ntype: concept\n---\n# 标题\n<!-- 这是注释：secret_keyword -->\n正文内容。\n"
+    tokens = clean_and_tokenize(text)
+    token_str = " ".join(tokens)
+    assert "secret_keyword" not in token_str, \
+        f"注释内容不应出现在 token 流: {tokens}"
+    assert "正文" in token_str or "内容" in token_str, \
+        f"正文内容应出现: {tokens}"
+
+
+def test_clean_tokenize_body_separator_not_eaten():
+    """正文中的 --- 水平分隔线不应被误当作 Frontmatter 吞掉正文内容"""
+    from bm25_search import clean_and_tokenize
+
+    text = (
+        "---\ntype: concept\n---\n"
+        "# 第一节\n内容A。\n"
+        "---\n"          # 正文分隔线，不应触发 Frontmatter 剥离
+        "# 第二节\n内容B。\n"
+    )
+    tokens = clean_and_tokenize(text)
+    token_str = " ".join(tokens)
+    assert "内容" in token_str or "b" in token_str, \
+        f"分隔线后的正文内容 '内容B' 应被保留: {tokens}"
