@@ -97,3 +97,41 @@ def test_archive_updates_backlinks(tmp_path):
     # 原始双链不再出现（排除被 ~~ 包围的情况）
     clean = updated.replace("~~[[old-concept]]~~", "")
     assert "[[old-concept]]" not in clean, "原始双链仍存在，未被完整替换"
+
+
+def test_archive_updates_backlinks_cross_dir(tmp_path):
+    """归档 global_concepts 中的笔记时，project_exclusives 中的双链也应被更新"""
+    # 构造双目录结构
+    global_dir = tmp_path / "wiki" / "global_concepts"
+    project_dir = tmp_path / "wiki" / "project_exclusives" / "myproj"
+    archive_dir = tmp_path / "wiki" / "archive"
+    wiki_dir = tmp_path / "wiki"
+    global_dir.mkdir(parents=True)
+    project_dir.mkdir(parents=True)
+    archive_dir.mkdir(parents=True)
+
+    # 即将被归档的笔记（在 global_concepts/）
+    target = global_dir / "shared-concept.md"
+    target.write_text(
+        "---\ntype: concept\ncurrent_weight: 0.10\naccess_count: 1\n---\n# 共享概念\n内容。\n"
+    )
+
+    # 引用者在 project_exclusives/（跨目录）
+    proj_note = project_dir / "project-note.md"
+    proj_note.write_text(
+        "---\ntype: concept\ncurrent_weight: 1.0\naccess_count: 3\n---\n"
+        "# 项目笔记\n本项目基于 [[shared-concept]] 实现。\n"
+    )
+
+    from memory_manager import archive_with_backlink_update
+    archive_with_backlink_update(str(target), str(archive_dir), str(wiki_dir))
+
+    # 断言：shared-concept.md 已移入 archive/
+    assert not target.exists()
+    assert (archive_dir / "shared-concept.md").exists()
+
+    # 断言：跨目录的 project_exclusives 中双链已被更新
+    updated = proj_note.read_text()
+    assert "~~[[shared-concept]]~~" in updated, f"跨目录双链未更新：{updated}"
+    clean = updated.replace("~~[[shared-concept]]~~", "")
+    assert "[[shared-concept]]" not in clean, "原始双链仍存在"

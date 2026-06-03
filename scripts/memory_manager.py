@@ -85,7 +85,7 @@ def scan_and_clean():
                 
                 if new_w < FORGET_THRESHOLD:
                     print(f"⚠️ [冷冻归档] 检测到过时边缘知识: {file} (当前权重: {new_w}) -> 物理移入冷冻区。")
-                    archive_with_backlink_update(path, ARCHIVE_DIR, target_dir)
+                    archive_with_backlink_update(path, ARCHIVE_DIR, os.path.join(BRAIN_DIR, "wiki"))
                 else:
                     with open(path, "w", encoding="utf-8") as f: f.write(new_content)
 
