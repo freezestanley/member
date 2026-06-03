@@ -14,14 +14,16 @@ WRITE_LOCK="${BRAIN_DIR}/_inbox/.hot_refresh.lock"
 MAX_WAIT=10
 waited=0
 
-# 等待写入锁释放（最多 10 秒，防止与 hot_refresh.py 并发冲突）
-while [ -f "$WRITE_LOCK" ] && [ "$waited" -lt "$MAX_WAIT" ]; do
-    echo "⏳ [同步等待] 检测到写入锁，等待 ${waited}s / ${MAX_WAIT}s..."
+# 等待 hot_refresh.py 写入锁释放（最多 10 秒）
+# 用 flock -n 探测实际锁持有状态（不依赖文件是否存在，而是探测进程是否持有 flock）
+touch "$WRITE_LOCK"  # 确保文件存在，flock 命令需要文件
+while ! flock -n "$WRITE_LOCK" true && [ "$waited" -lt "$MAX_WAIT" ]; do
+    echo "⏳ [同步等待] hot_refresh.py 正在写入，等待 ${waited}s / ${MAX_WAIT}s..."
     sleep 1
     waited=$(( waited + 1 ))
 done
 
-if [ -f "$WRITE_LOCK" ]; then
+if ! flock -n "$WRITE_LOCK" true; then
     echo "⚠️ [同步中止] 写入锁持续超过 ${MAX_WAIT} 秒，本次同步跳过，请手动检查。"
     exit 1
 fi

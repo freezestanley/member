@@ -135,6 +135,9 @@ def main():
     finally:
         fcntl.flock(_lock_fh, fcntl.LOCK_UN)
         _lock_fh.close()
+        # 注意：故意不删除 LOCK_FILE，锁文件是持久标记。
+        # 进程持有 flock 期间 vault_sync.sh 通过 flock -n 探测锁状态，
+        # 而非通过文件是否存在来判断。
 
 
 if __name__ == "__main__":
