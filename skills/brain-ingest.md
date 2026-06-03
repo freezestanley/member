@@ -11,6 +11,7 @@ allowed-tools:
   - Bash(python3 *)
   - Edit(/Users/za-stanlexu/Documents/member/member/*)
   - Bash(mkdir *)
+  - Bash(/Users/za-stanlexu/Documents/member/member/scripts/*)
 ---
 
 # /brain-ingest

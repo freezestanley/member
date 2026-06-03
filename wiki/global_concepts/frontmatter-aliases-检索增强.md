@@ -8,7 +8,7 @@ code_symbols: [extract_aliases, extract_aliases_as_line, clean_and_tokenize, sea
 initial_weight: 1.0
 current_weight: 1.0
 last_activated: 2026-06-03
-access_count: 1
+access_count: 2
 ---
 
 # Frontmatter aliases 字段：检索容错增强规范

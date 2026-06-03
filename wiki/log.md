@@ -1,5 +1,6 @@
 ## 2026-06-03
 - 2026-06-03 11:53 brain-query "openclaw sdk 魔改版 区别" 命中2条：魔改版=browser-sdk原样复刻，唯一差异是transport.ts直接用WebSocket
+- 2026-06-03 19:14 brain-query "记忆仓库命令功能区别" 命中3条：检索到alias规范/hot-watcher/log-format，命令说明来自skill源文件
 
 ## 2026-06-02
 - 2026-06-02 20:22 brain-query "OpenClaw Browser SDK 架构" 命中0条：dome项目知识库暂无该主题

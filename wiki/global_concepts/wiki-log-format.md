@@ -7,8 +7,8 @@ code_symbols:
   - log_append
 initial_weight: 1.0
 current_weight: 0.977
-last_activated: 2026-06-02
-access_count: 1
+last_activated: 2026-06-03
+access_count: 2
 ---
 
 # wiki/log.md 查询日志规范
