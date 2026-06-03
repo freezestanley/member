@@ -26,3 +26,29 @@ def test_frequency_bonus_increases_with_access():
     w20 = calculate_weight(1.0, "2026-06-03", 20)
     assert w5 > w1, f"access=5 权重应 > access=1，实际 {w5} vs {w1}"
     assert w20 > w5, f"access=20 权重应 > access=5，实际 {w20} vs {w5}"
+
+
+import subprocess, os, time
+
+
+def test_hot_refresh_no_torn_write(tmp_path):
+    """两个 hot_refresh.py 进程并发执行，hot.md 内容应完整（不应出现空文件或截断）"""
+    hot_md = tmp_path / "hot.md"
+    lock_path = tmp_path / ".hot_refresh.lock"
+    script = f"""
+import fcntl, time
+lock_path = "{lock_path}"
+hot_path = "{hot_md}"
+with open(lock_path, "w") as lf:
+    fcntl.flock(lf, fcntl.LOCK_EX)
+    time.sleep(0.1)
+    with open(hot_path, "w") as f:
+        f.write("content_from_pid_" + str(__import__("os").getpid()))
+    fcntl.flock(lf, fcntl.LOCK_UN)
+"""
+    procs = [subprocess.Popen(["python3", "-c", script]) for _ in range(3)]
+    for p in procs:
+        p.wait()
+    content = hot_md.read_text()
+    assert content.startswith("content_from_pid_"), f"文件内容异常: {{content!r}}"
+    assert len(content) > 10, "文件不应为空或截断"

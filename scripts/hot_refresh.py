@@ -108,17 +108,33 @@ def render_hot(notes: list[dict]) -> str:
 
 
 def main():
-    notes = collect_notes()
-    if not notes:
-        print("[hot_refresh] 未找到任何笔记，hot.md 未更新。", file=sys.stderr)
+    import fcntl
+
+    LOCK_FILE = Path(__file__).parent.parent / "_inbox" / ".hot_refresh.lock"
+    LOCK_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+    _lock_fh = open(LOCK_FILE, "w")
+    try:
+        fcntl.flock(_lock_fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        print("[hot_refresh] 另一进程正在刷新，本次跳过。", file=sys.stderr)
+        _lock_fh.close()
         sys.exit(0)
 
-    # 按 current_weight 降序，同权重按 access_count 降序
-    notes.sort(key=lambda n: (n["weight"], n["access"]), reverse=True)
-    top = notes[:TOP_N]
+    try:
+        notes = collect_notes()
+        if not notes:
+            print("[hot_refresh] 未找到任何笔记，hot.md 未更新。", file=sys.stderr)
+            sys.exit(0)
 
-    HOT_MD.write_text(render_hot(top), encoding="utf-8")
-    print(f"[hot_refresh] 已更新 hot.md，共 {len(top)} 条记录（全库 {len(notes)} 篇笔记）。")
+        notes.sort(key=lambda n: (n["weight"], n["access"]), reverse=True)
+        top = notes[:TOP_N]
+
+        HOT_MD.write_text(render_hot(top), encoding="utf-8")
+        print(f"[hot_refresh] 已更新 hot.md，共 {len(top)} 条记录（全库 {len(notes)} 篇笔记）。")
+    finally:
+        fcntl.flock(_lock_fh, fcntl.LOCK_UN)
+        _lock_fh.close()
 
 
 if __name__ == "__main__":
