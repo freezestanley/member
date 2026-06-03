@@ -16,39 +16,53 @@ allowed-tools:
 
 # /brain-query
 
-严格执行“非必要不求助”漏斗模型：先检查自身会话上下文与即时缓冲区；只有在自身没有相关事实时，才允许检索中央知识库，并在命中后基于笔记全文回答与回写激活信息。
+严格执行”非必要不求助”漏斗模型：先检查自身会话上下文与即时缓冲区；只有在自身没有相关事实时，才允许检索中央知识库，并在命中后基于笔记全文回答与回写激活信息。
+
+## 参数说明
+
+- `$ARGUMENTS` 格式：`<查询词> [--scope project|global]`
+- `--scope project`（默认）：仅搜索当前项目私有记忆 + 公共记忆（global_concepts）
+- `--scope global`：搜索全库所有项目私有记忆 + 公共记忆，跨项目检索
 
 ## 执行
 
 1. 如果没有查询词，先要求补充，不要运行空查询。
-2. 必须先执行第一级决策：首选命中（自身热记忆自查）。
+2. 解析 `$ARGUMENTS`：
+   - 提取 `--scope` 值（project 或 global），缺省为 `project`
+   - 剩余部分作为实际查询词
+3. 必须先执行第一级决策：首选命中（自身热记忆自查）。
    - 全面内省你当前的会话窗口（Chat Context Window）以及 `claude-mem` 即时缓冲区。
    - 同时检查当前已打开、正在编辑、或当前会话中已贴出的物理文件草稿内容。
-   - 如果关于 `"$ARGUMENTS"` 的核心技术规范、架构决策、代码原话，已经在当前会话或当前打开的物理文件草稿中清晰存在：
+   - 如果关于查询词的核心技术规范、架构决策、代码原话，已经在当前会话或当前打开的物理文件草稿中清晰存在：
      - 你必须立刻停止向下执行任何本地终端命令。
      - 直接利用当前极热工作记忆回答用户。
      - 不得检索中央知识库。
-     - 不得为了“确认一下”而额外调用搜索脚本。
-3. 仅当第 2 步确认以下任一条件成立时，才允许进入第二级决策：降级召回（中央记忆仓库外求）。
+     - 不得为了”确认一下”而额外调用搜索脚本。
+4. 仅当第 3 步确认以下任一条件成立时，才允许进入第二级决策：降级召回（中央记忆仓库外求）。
    - 你对该话题一片空白、毫无线索。
    - 当前会话被 `/compact`、`/clear` 或等效操作清空。
    - 当前会话与当前打开草稿中不存在足以支撑回答的事实依据。
-4. 进入第二级后，获取当前项目名：
+5. 进入第二级后，获取当前项目名：
    ```bash
-   basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+   basename “$(git rev-parse --show-toplevel 2>/dev/null || pwd)”
    ```
-5. 运行（限定当前项目的私有记忆 + 公共记忆）：
-   ```bash
-   python3 /Users/za-stanlexu/Documents/member/member/scripts/bm25_search.py "$ARGUMENTS" --project <当前项目名>
-   ```
-6. 解析脚本输出中的 Top 3 相对路径。根目录是：
+6. 根据 `--scope` 值运行检索：
+   - `--scope project`（默认）：
+     ```bash
+     python3 /Users/za-stanlexu/Documents/member/member/scripts/bm25_search.py “<查询词>” --project <当前项目名>
+     ```
+   - `--scope global`：
+     ```bash
+     python3 /Users/za-stanlexu/Documents/member/member/scripts/bm25_search.py “<查询词>”
+     ```
+7. 解析脚本输出中的 Top 3 相对路径。根目录是：
    - `/Users/za-stanlexu/Documents/member/member`
-7. 读取命中笔记全文。未读完之前，不要回答。
-8. 仅基于已读笔记回答：
+8. 读取命中笔记全文。未读完之前，不要回答。
+9. 仅基于已读笔记回答：
    - 优先使用笔记中的结论、约束、定义、经验
    - 如果多篇笔记冲突，明确指出冲突
    - 如果内容不足，明确说明不足
-9. 回写每个命中文件的 frontmatter：
+10. 回写每个命中文件的 frontmatter：
    - 逐个打开命中文件，不要批量跳过
    - 校验 frontmatter 是否存在
    - `last_activated`: 改为今天，`YYYY-MM-DD`
@@ -56,19 +70,19 @@ allowed-tools:
    - `access_count`: 在原值基础上加 1
    - 只改这 3 个字段，不改其他字段
    - 每改完一个文件，确认已保存
-10. `wiki/hot.md` 由 `hot_watcher.sh` 后台进程自动刷新，无需手动触发。
-   - 步骤 7 回写 frontmatter 后，watcher 检测到文件变化会自动调用 `hot_refresh.py`
+11. `wiki/hot.md` 由 `hot_watcher.sh` 后台进程自动刷新，无需手动触发。
+   - 步骤 10 回写 frontmatter 后，watcher 检测到文件变化会自动调用 `hot_refresh.py`
    - 若 watcher 未运行，可手动执行一次：
      ```bash
      python3 /Users/za-stanlexu/Documents/member/member/scripts/hot_refresh.py
      ```
-11. 更新 `wiki/log.md`（调用脚本，禁止手动写入）：
+12. 更新 `wiki/log.md`（调用脚本，禁止手动写入）：
    ```bash
    python3 /Users/za-stanlexu/Documents/member/member/scripts/log_append.py \
      "brain-query" "<查询词>" "<命中N条：一句话不超过30字概括结果>"
    ```
    脚本自动处理日期分组、顶部插入新日期、保持最多 50 条记录。
-12. 输出最终答复；必要时补充本次依据了哪些笔记。
+13. 输出最终答复；必要时补充本次依据了哪些笔记。
 
 ## 决策漏斗
 

@@ -16,57 +16,80 @@ allowed-tools:
 
 # /brain-search-rg
 
-严格执行"非必要不求助"漏斗模型：先检查自身会话上下文与即时缓冲区；只有在自身没有相关事实时，才允许用 rg 全文匹配在整个中央知识库与历史会话中做跨项目检索，用来盘点某个关键词在公共规范、项目专属笔记和历史讨论中的分布。
+严格执行"非必要不求助"漏斗模型：先检查自身会话上下文与即时缓冲区；只有在自身没有相关事实时，才允许用 rg 全文匹配检索，用来盘点某个关键词在公共规范、项目专属笔记和历史讨论中的分布。
 
 与 `/brain-search` 的唯一区别：检索引擎从 BM25 换成 rg 精确全文匹配。适合知道确切词汇、需要审计完整出现位置的场景。
 
 它的目标是"找资产、看分布、做审计"；如果用户要基于知识库给出精准答案，优先使用 `/brain-query-rg`。
 
+## 参数说明
+
+- `$ARGUMENTS` 格式：`<检索词> [--scope project|global]`
+- `--scope project`：仅审计当前项目私有记忆 + 公共记忆（global_concepts）
+- `--scope global`（默认）：审计全库所有项目私有记忆 + 公共记忆，跨项目分布
+
 ## 执行
 
 1. 如果没有检索词，先要求补充，不要运行空查询。
-2. 必须先执行第一级决策：首选命中（自身热记忆自查）。
+2. 解析 `$ARGUMENTS`：
+   - 提取 `--scope` 值（project 或 global），缺省为 `global`
+   - 剩余部分作为实际检索词
+3. 必须先执行第一级决策：首选命中（自身热记忆自查）。
    - 全面内省你当前的会话窗口（Chat Context Window）以及 `claude-mem` 即时缓冲区。
    - 同时检查当前已打开、正在编辑、或当前会话中已贴出的物理文件草稿内容。
-   - 如果关于 `"$ARGUMENTS"` 的跨项目资产分布、规范归属、历史结论，已经在当前会话或当前打开的物理文件草稿中清晰存在：
+   - 如果关于检索词的跨项目资产分布、规范归属、历史结论，已经在当前会话或当前打开的物理文件草稿中清晰存在：
      - 你必须立刻停止所有检索。
      - 直接利用当前极热工作记忆执行下一步并输出结果。
      - 不得检索中央知识库。
      - 不得为了"确认一下"而额外调用 rg、搜索脚本或历史记忆工具。
-3. 仅当第 2 步确认以下任一条件成立时，才允许进入第二级决策：降级召回（中央记忆仓库外求）。
+4. 仅当第 3 步确认以下任一条件成立时，才允许进入第二级决策：降级召回（中央记忆仓库外求）。
    - 你对该话题一片空白、毫无线索。
    - 当前会话被 `/compact`、`/clear` 或等效操作清空。
    - 当前会话与当前打开草稿中不存在足以支撑审计报告的事实依据。
-4. 先做本地 Wiki rg 全库全文检索（公共记忆 + 所有项目私有记忆）：
+5. 获取当前项目名：
    ```bash
-   python3 /Users/za-stanlexu/Documents/member/member/scripts/rg_body_search.py \
-     "$ARGUMENTS" \
-     /Users/za-stanlexu/Documents/member/member/wiki/global_concepts \
-     /Users/za-stanlexu/Documents/member/member/wiki/project_exclusives
+   basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
    ```
-5. 再检索 MemPalace 历史记忆：
-   - 先获取当前项目名：
+6. 根据 `--scope` 值做本地 Wiki rg 检索：
+   - `--scope global`（默认）：
      ```bash
-     basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+     python3 /Users/za-stanlexu/Documents/member/member/scripts/rg_body_search.py \
+       "<检索词>" \
+       /Users/za-stanlexu/Documents/member/member/wiki/global_concepts \
+       /Users/za-stanlexu/Documents/member/member/wiki/project_exclusives
      ```
-   - 公共规范域：
+   - `--scope project`：
      ```bash
-     mempalace search "$ARGUMENTS" --wing "wing_global_shared" --limit 3
+     python3 /Users/za-stanlexu/Documents/member/member/scripts/rg_body_search.py \
+       "<检索词>" \
+       /Users/za-stanlexu/Documents/member/member/wiki/global_concepts \
+       /Users/za-stanlexu/Documents/member/member/wiki/project_exclusives/<当前项目名>
      ```
-   - 当前项目域：
-     ```bash
-     mempalace search "$ARGUMENTS" --wing "wing_project_<当前项目名>" --limit 3
-     ```
-   - 只有当用户明确要求"跨所有项目历史会话"时，才额外执行：
-     ```bash
-     mempalace search "$ARGUMENTS" --limit 5
-     ```
-6. 合并检索结果并输出"跨项目技术资产审计报告"：
+7. 再检索 MemPalace 历史记忆：
+   - `--scope global`（默认）：
+     - 公共规范域：
+       ```bash
+       mempalace search "<检索词>" --wing "wing_global_shared" --limit 3
+       ```
+     - 只有当用户明确要求"跨所有项目历史会话"时，才额外执行：
+       ```bash
+       mempalace search "<检索词>" --limit 5
+       ```
+   - `--scope project`：
+     - 公共规范域：
+       ```bash
+       mempalace search "<检索词>" --wing "wing_global_shared" --limit 3
+       ```
+     - 当前项目域：
+       ```bash
+       mempalace search "<检索词>" --wing "wing_project_<当前项目名>" --limit 3
+       ```
+8. 合并检索结果并输出"跨项目技术资产审计报告"：
    - `公共规范沉淀`：列出 `wiki/global_concepts/` 中命中的笔记路径，并概括其主题或规则。
    - `历史项目独占实例`：按 `project_exclusives/<项目名>/` 分组列出命中文件，说明各项目里记录的是实现、约束还是踩坑。
    - `历史会话记忆`：列出 MemPalace 命中的 wing、条目标识和必要短摘录；只允许基于真实命中做精简，不得伪造原话。
    - `结论`：总结该关键词更偏"通用规范"还是"项目专属经验"，并在必要时提示下一步用 `/brain-query-rg` 深读。
-7. 回写本地 Wiki 命中笔记的 frontmatter：
+9. 回写本地 Wiki 命中笔记的 frontmatter：
    - 逐个打开命中文件，不要批量跳过
    - 校验 frontmatter 是否存在
    - `last_activated`: 改为今天，`YYYY-MM-DD`
@@ -74,19 +97,19 @@ allowed-tools:
    - `access_count`: 在原值基础上加 1
    - 只改这 3 个字段，不改其他字段
    - 每改完一个文件，确认已保存
-8. `wiki/hot.md` 由 `hot_watcher.sh` 后台进程自动刷新，无需手动触发。
-   - 步骤 7 回写 frontmatter 后，watcher 检测到文件变化会自动调用 `hot_refresh.py`
+10. `wiki/hot.md` 由 `hot_watcher.sh` 后台进程自动刷新，无需手动触发。
+   - 步骤 9 回写 frontmatter 后，watcher 检测到文件变化会自动调用 `hot_refresh.py`
    - 若 watcher 未运行，可手动执行一次：
      ```bash
      python3 /Users/za-stanlexu/Documents/member/member/scripts/hot_refresh.py
      ```
-9. 更新 `wiki/log.md`（调用脚本，禁止手动写入）：
+11. 更新 `wiki/log.md`（调用脚本，禁止手动写入）：
    ```bash
    python3 /Users/za-stanlexu/Documents/member/member/scripts/log_append.py \
      "brain-search-rg" "<查询词>" "<命中N条：一句话不超过30字概括结果>"
    ```
    脚本自动处理日期分组、顶部插入新日期、保持最多 50 条记录。
-10. 如果本地 Wiki 和 MemPalace 都没有命中，明确说明"未找到相关跨项目资产"。
+12. 如果本地 Wiki 和 MemPalace 都没有命中，明确说明"未找到相关跨项目资产"。
 
 ## 决策漏斗
 

@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "wiki/project_exclusives/member/brain-os-architecture.md",
+                "file": "wiki/hot.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "brain-os-architecture"
+              "title": "hot"
             }
           }
         ]
@@ -183,13 +183,14 @@
   },
   "active": "4294b0546648e2ee",
   "lastOpenFiles": [
+    "wiki/global_concepts/wiki-hot-watcher.md",
+    "wiki/global_concepts/frontmatter-aliases-检索增强.md",
+    "wiki/global_concepts/brain-commands-scope-parameter.md",
+    "wiki/project_exclusives/member/brain-os-architecture.md",
     "scripts/__pycache__/utils.cpython-313.pyc",
     "wiki/global_concepts/team-coding-standards.md",
-    "wiki/project_exclusives/member/brain-os-architecture.md",
     "wiki/project_exclusives/member",
-    "wiki/global_concepts/wiki-hot-watcher.md",
     "wiki/global_concepts/wiki-log-format.md",
-    "wiki/global_concepts/frontmatter-aliases-检索增强.md",
     "wiki/hot.md",
     "docs/superpowers/specs/2026-06-03-llm-brain-os-design.md",
     "scripts/__pycache__/utils.cpython-314.pyc",
@@ -206,7 +207,6 @@
     "scripts/__pycache__/rg_body_search.cpython-314.pyc",
     "scripts/rg_body_search.py",
     "scripts/__pycache__/hot_refresh.cpython-314.pyc",
-    "scripts/__pycache__/memory_manager.cpython-314.pyc",
     "docs/superpowers/plans/2026-06-03-brain-os-hardening.md",
     "wiki/log.md",
     "wiki/index.md",

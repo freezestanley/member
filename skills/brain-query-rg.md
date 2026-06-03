@@ -16,44 +16,61 @@ allowed-tools:
 
 # /brain-query-rg
 
-严格执行“非必要不求助”漏斗模型：先检查自身会话上下文与即时缓冲区；只有在自身没有相关事实时，才允许用 rg 全文匹配检索当前项目私有记忆与公共记忆，再基于命中笔记全文回答，并回写命中笔记的激活信息。
+严格执行”非必要不求助”漏斗模型：先检查自身会话上下文与即时缓冲区；只有在自身没有相关事实时，才允许用 rg 全文匹配检索，再基于命中笔记全文回答，并回写命中笔记的激活信息。
 
 与 `/brain-query` 的唯一区别：检索引擎从 BM25 换成 rg 精确全文匹配。适合知道确切词汇、需要精准定位的场景。
+
+## 参数说明
+
+- `$ARGUMENTS` 格式：`<查询词> [--scope project|global]`
+- `--scope project`（默认）：仅搜索当前项目私有记忆 + 公共记忆（global_concepts）
+- `--scope global`：搜索全库所有项目私有记忆 + 公共记忆，跨项目检索
 
 ## 执行
 
 1. 如果没有查询词，先要求补充，不要运行空查询。
-2. 必须先执行第一级决策：首选命中（自身热记忆自查）。
+2. 解析 `$ARGUMENTS`：
+   - 提取 `--scope` 值（project 或 global），缺省为 `project`
+   - 剩余部分作为实际查询词
+3. 必须先执行第一级决策：首选命中（自身热记忆自查）。
    - 全面内省你当前的会话窗口（Chat Context Window）以及 `claude-mem` 即时缓冲区。
    - 同时检查当前已打开、正在编辑、或当前会话中已贴出的物理文件草稿内容。
-   - 如果关于 `"$ARGUMENTS"` 的核心技术规范、架构决策、代码原话，已经在当前会话或当前打开的物理文件草稿中清晰存在：
+   - 如果关于查询词的核心技术规范、架构决策、代码原话，已经在当前会话或当前打开的物理文件草稿中清晰存在：
      - 你必须立刻停止所有检索。
      - 直接利用当前极热工作记忆执行下一步并回答用户。
      - 不得检索中央知识库。
-     - 不得为了“确认一下”而额外调用 rg 或其他搜索脚本。
-3. 仅当第 2 步确认以下任一条件成立时，才允许进入第二级决策：降级召回（中央记忆仓库外求）。
+     - 不得为了”确认一下”而额外调用 rg 或其他搜索脚本。
+4. 仅当第 3 步确认以下任一条件成立时，才允许进入第二级决策：降级召回（中央记忆仓库外求）。
    - 你对该话题一片空白、毫无线索。
    - 当前会话被 `/compact`、`/clear` 或等效操作清空。
    - 当前会话与当前打开草稿中不存在足以支撑回答的事实依据。
-4. 获取当前项目名：
+5. 获取当前项目名：
    ```bash
-   basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+   basename “$(git rev-parse --show-toplevel 2>/dev/null || pwd)”
    ```
-5. 运行 rg 检索（限定当前项目私有记忆 + 公共记忆）：
-   ```bash
-   python3 /Users/za-stanlexu/Documents/member/member/scripts/rg_body_search.py \
-     "$ARGUMENTS" \
-     /Users/za-stanlexu/Documents/member/member/wiki/global_concepts \
-     /Users/za-stanlexu/Documents/member/member/wiki/project_exclusives/<当前项目名>
-   ```
-6. 解析命中文件路径（去重，取前 3 个不同文件）。根目录是：
+6. 根据 `--scope` 值运行 rg 检索：
+   - `--scope project`（默认）：
+     ```bash
+     python3 /Users/za-stanlexu/Documents/member/member/scripts/rg_body_search.py \
+       “<查询词>” \
+       /Users/za-stanlexu/Documents/member/member/wiki/global_concepts \
+       /Users/za-stanlexu/Documents/member/member/wiki/project_exclusives/<当前项目名>
+     ```
+   - `--scope global`：
+     ```bash
+     python3 /Users/za-stanlexu/Documents/member/member/scripts/rg_body_search.py \
+       “<查询词>” \
+       /Users/za-stanlexu/Documents/member/member/wiki/global_concepts \
+       /Users/za-stanlexu/Documents/member/member/wiki/project_exclusives
+     ```
+7. 解析命中文件路径（去重，取前 3 个不同文件）。根目录是：
    - `/Users/za-stanlexu/Documents/member/member`
-7. 读取命中笔记全文。未读完之前，不要回答。
-8. 仅基于已读笔记回答：
+8. 读取命中笔记全文。未读完之前，不要回答。
+9. 仅基于已读笔记回答：
    - 优先使用笔记中的结论、约束、定义、经验
    - 如果多篇笔记冲突，明确指出冲突
    - 如果内容不足，明确说明不足
-9. 回写每个命中文件的 frontmatter：
+10. 回写每个命中文件的 frontmatter：
    - 逐个打开命中文件，不要批量跳过
    - 校验 frontmatter 是否存在
    - `last_activated`: 改为今天，`YYYY-MM-DD`
@@ -61,19 +78,19 @@ allowed-tools:
    - `access_count`: 在原值基础上加 1
    - 只改这 3 个字段，不改其他字段
    - 每改完一个文件，确认已保存
-10. `wiki/hot.md` 由 `hot_watcher.sh` 后台进程自动刷新，无需手动触发。
-   - 步骤 9 回写 frontmatter 后，watcher 检测到文件变化会自动调用 `hot_refresh.py`
+11. `wiki/hot.md` 由 `hot_watcher.sh` 后台进程自动刷新，无需手动触发。
+   - 步骤 10 回写 frontmatter 后，watcher 检测到文件变化会自动调用 `hot_refresh.py`
    - 若 watcher 未运行，可手动执行一次：
      ```bash
      python3 /Users/za-stanlexu/Documents/member/member/scripts/hot_refresh.py
      ```
-11. 更新 `wiki/log.md`（调用脚本，禁止手动写入）：
+12. 更新 `wiki/log.md`（调用脚本，禁止手动写入）：
    ```bash
    python3 /Users/za-stanlexu/Documents/member/member/scripts/log_append.py \
      "brain-query-rg" "<查询词>" "<命中N条：一句话不超过30字概括结果>"
    ```
    脚本自动处理日期分组、顶部插入新日期、保持最多 50 条记录。
-12. 输出最终答复；必要时补充本次依据了哪些笔记。
+13. 输出最终答复；必要时补充本次依据了哪些笔记。
 
 ## 决策漏斗
 
@@ -138,7 +155,7 @@ allowed-tools:
 - 禁止跳过第一级自查，直接搜索中央知识库。
 - 禁止在当前会话或当前草稿已存在明确事实时，仍调用任何检索命令。
 - 禁止把中央知识库当作默认入口；它只能是第一级失败后的降级路径。
-- 禁止检索 `project_exclusives` 的其他项目子目录（只查当前项目）。
+- `--scope project` 时，禁止检索 `project_exclusives` 的其他项目子目录（只查当前项目）。
 - 禁止在未读完命中文件前回答。
 - 禁止把未命中的文件当作本次依据。
 - 禁止结果为空时仍声称找到了相关知识。
