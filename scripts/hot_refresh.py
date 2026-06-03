@@ -2,8 +2,11 @@
 """
 hot_refresh.py — 扫描全库笔记，按 current_weight 降序取 Top 30，重写 wiki/hot.md。
 
-输出格式（每行一条）：
-  - [笔记标题](相对路径) | weight: 1.139 | access: 5
+输出格式（大纲树模式）：
+  ### [[笔记文件名]] — 笔记标题  ·  🧠 weight: 1.139  ·  📊 access: 5
+  - 一级标题内容
+    - 二级标题内容
+      - 三级标题内容
 
 用法：
     python3 hot_refresh.py
@@ -48,8 +51,29 @@ def extract_title(text: str) -> str:
     return ""
 
 
+HEADING_RE = re.compile(r'^(#{1,3})\s+(.+)$')
+
+
+def extract_outline(text: str) -> list[str]:
+    """从正文提取 H1-H3 标题，返回缩进大纲行列表。
+    H1 → "- 标题"，H2 → "  - 标题"，H3 → "    - 标题"
+    跳过 Frontmatter 中的内容（只处理 --- 之后的正文）。
+    """
+    # 剥离 Frontmatter，只对正文提取标题
+    body = re.sub(r'^---[\s\S]+?---\n', '', text, count=1, flags=re.MULTILINE)
+    lines = []
+    for line in body.splitlines():
+        m = HEADING_RE.match(line)
+        if m:
+            level = len(m.group(1))          # 1, 2, 3
+            title = m.group(2).strip()
+            indent = "  " * (level - 1)      # H1="", H2="  ", H3="    "
+            lines.append(f"{indent}- {title}")
+    return lines
+
+
 def collect_notes() -> list[dict]:
-    """遍历扫描目录，收集所有 .md 笔记的元数据。"""
+    """遍历扫描目录，收集所有 .md 笔记的元数据（含原始正文，用于大纲提取）。"""
     notes = []
     for scan_dir in SCAN_DIRS:
         if not scan_dir.exists():
@@ -82,28 +106,47 @@ def collect_notes() -> list[dict]:
 
             notes.append({
                 "title": title,
+                "stem": md_file.stem,        # 用于 [[双链]] 锚点
                 "path": str(rel_path),
                 "weight": weight,
                 "access": access,
+                "outline": extract_outline(text),  # 预提取大纲，render 时直接用
             })
 
     return notes
 
 
 def render_hot(notes: list[dict]) -> str:
+    """将热度 Top N 笔记渲染为大纲树格式。
+
+    格式（每篇笔记）：
+        ### [[文件名]] — 笔记标题  ·  🧠 weight: 1.139  ·  📊 access: 5
+        - 一级标题
+          - 二级标题
+            - 三级标题
+        （空行分隔）
+    """
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     lines = [
         f"# 知识热度榜 Top {TOP_N}",
         f"> 更新时间：{now}　　数据来源：全库笔记 current_weight + access_count",
         "",
-        "| # | 笔记 | 权重 | 调用次数 |",
-        "|---|------|------|----------|",
     ]
     for i, note in enumerate(notes, 1):
-        link = f"[{note['title']}]({note['path']})"
-        lines.append(f"| {i} | {link} | {note['weight']:.3f} | {note['access']} |")
+        # 条目标题行：序号 + 双链锚点 + 可读标题 + 权重/调用数
+        header = (
+            f"### {i}. [[{note['stem']}]] — {note['title']}"
+            f"  ·  🧠 {note['weight']:.3f}  ·  📊 {note['access']} 次"
+        )
+        lines.append(header)
 
-    lines.append("")
+        if note["outline"]:
+            lines.extend(note["outline"])
+        else:
+            lines.append("- *(无标题大纲)*")
+
+        lines.append("")   # 笔记间空行
+
     return "\n".join(lines)
 
 

@@ -370,3 +370,82 @@ def test_clean_tokenize_body_separator_not_eaten():
     token_str = " ".join(tokens)
     assert "内容" in token_str or "b" in token_str, \
         f"分隔线后的正文内容 '内容B' 应被保留: {tokens}"
+
+
+# ── hot_refresh 大纲树格式测试 ────────────────────────────────────────────────
+
+def test_extract_outline_h1_h2_h3():
+    """extract_outline 应正确提取 H1-H3 标题并缩进"""
+    sys.path.insert(0, "scripts")
+    from hot_refresh import extract_outline
+
+    text = (
+        "---\ntype: concept\n---\n"
+        "# 顶级标题\n正文内容。\n"
+        "## 二级标题\n更多内容。\n"
+        "### 三级标题\n细节。\n"
+        "#### 四级标题\n不应出现。\n"
+    )
+    outline = extract_outline(text)
+    assert outline == [
+        "- 顶级标题",
+        "  - 二级标题",
+        "    - 三级标题",
+    ], f"大纲提取结果错误：{outline}"
+
+
+def test_extract_outline_skips_frontmatter_headings():
+    """Frontmatter 中不应有标题，但防御：即使有也不应被提取"""
+    from hot_refresh import extract_outline
+
+    # 假设有人在 Frontmatter 里写了类似 # 的内容（实际不会，但防御）
+    text = "---\ntype: concept\n---\n# 正文标题\n内容。\n"
+    outline = extract_outline(text)
+    assert len(outline) == 1
+    assert outline[0] == "- 正文标题"
+
+
+def test_render_hot_outline_format(tmp_path):
+    """render_hot 应输出大纲树格式，不包含 Markdown 表格"""
+    from hot_refresh import render_hot
+
+    notes = [
+        {
+            "title": "测试笔记",
+            "stem": "test-note",
+            "path": "wiki/global_concepts/test-note.md",
+            "weight": 1.0,
+            "access": 3,
+            "outline": ["- 第一节", "  - 子节"],
+        }
+    ]
+    output = render_hot(notes)
+
+    # 不应有表格格式
+    assert "|" not in output, f"大纲模式不应包含 Markdown 表格: {output}"
+    # 应有双链锚点
+    assert "[[test-note]]" in output, f"应包含双链锚点: {output}"
+    # 应有大纲行
+    assert "- 第一节" in output
+    assert "  - 子节" in output
+    # 应有权重和调用次数
+    assert "1.000" in output
+    assert "3 次" in output
+
+
+def test_render_hot_empty_outline():
+    """无标题的笔记应显示占位符而非崩溃"""
+    from hot_refresh import render_hot
+
+    notes = [
+        {
+            "title": "无标题笔记",
+            "stem": "no-heading",
+            "path": "wiki/global_concepts/no-heading.md",
+            "weight": 0.8,
+            "access": 1,
+            "outline": [],
+        }
+    ]
+    output = render_hot(notes)
+    assert "*(无标题大纲)*" in output, f"空大纲应显示占位符: {output}"
