@@ -160,3 +160,46 @@ def test_precise_mode_alias_hit_lineno0_falls_back_to_summary():
 def test_precise_mode_empty_input():
     result = dehydrate_context("", [1], "empty")
     assert result == ""
+
+
+# ─── Task 5: assemble_final_context ───────────────────────────────────────
+
+from context_dehydrator import assemble_final_context
+
+
+def test_assemble_bm25_path():
+    """BM25路径：recalled_results 无 hit_lines 字段，走全文摘要模式"""
+    results = [
+        {"content": SAMPLE_MD, "stem": "brain-os-architecture", "score": 0.9},
+    ]
+    output = assemble_final_context(results, max_total_tokens=8000)
+    assert "LLM-Brain OS 完整架构" in output
+    assert "Summary" in output
+
+
+def test_assemble_rg_path():
+    """rg路径：recalled_results 有 hit_lines 字段，走精准裁剪模式"""
+    lines = SAMPLE_MD.split("\n")
+    hit_line = next(i + 1 for i, l in enumerate(lines) if "摄入流描述" in l)
+    results = [
+        {"content": SAMPLE_MD, "stem": "brain-os", "hit_lines": [hit_line]},
+    ]
+    output = assemble_final_context(results, max_total_tokens=8000)
+    assert "摄入流描述" in output
+    assert "Context Scope" in output
+
+
+def test_assemble_token_budget_truncates():
+    """超出 max_total_tokens 时应截断并添加警告（预算设为 1，必然触发）"""
+    big_md = "# 标题\n\n" + ("这是很长的内容行。\n" * 500)
+    results = [
+        {"content": big_md, "stem": "doc1", "score": 0.9},
+        {"content": big_md, "stem": "doc2", "score": 0.8},
+    ]
+    output = assemble_final_context(results, max_total_tokens=1)
+    assert "SYSTEM WARNING" in output
+
+
+def test_assemble_empty_results():
+    output = assemble_final_context([], max_total_tokens=8000)
+    assert output == ""
