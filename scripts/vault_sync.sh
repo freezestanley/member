@@ -29,37 +29,37 @@ if [ "$CURRENT_BRANCH" != "$SYNC_BRANCH" ]; then
 fi
 echo "🌿 [同步分支] $SYNC_BRANCH（当前分支匹配，允许发布）"
 
-WRITE_LOCK="${BRAIN_DIR}/_inbox/.hot_refresh.lock"
+INBOX_DIR="${BRAIN_DIR}/_inbox"
 MAX_WAIT=10
 waited=0
 
-# 等待 hot_refresh.py 写入锁释放（最多 10 秒）
-# 用 Python fcntl 探测实际锁持有状态（macOS 兼容，不依赖 GNU flock 命令）
-# 注意：heredoc 不使用单引号，使 $WRITE_LOCK 能被 Shell 展开后作为 argv[1] 传入
-lock_is_held() {
-    python3 - "$WRITE_LOCK" <<PYEOF
-import fcntl, sys, os
-lock_path = sys.argv[1]
-if not os.path.exists(lock_path):
-    sys.exit(1)   # 文件不存在 → 无锁 → exit 1（不阻塞）
-try:
-    # 用 "r+" 打开已有文件，避免 "w" 模式隐式创建或截断
-    with open(lock_path, "r+") as f:
-        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        fcntl.flock(f, fcntl.LOCK_UN)
-    sys.exit(1)   # 获锁成功 → 没有进程持有锁 → exit 1（不阻塞）
-except (BlockingIOError, OSError):
-    sys.exit(0)   # 获锁失败 → 有进程持有锁 → exit 0（阻塞中）
+# 等待所有 hot_refresh 写入锁释放（双轨：global + per-project）
+# 检测 _inbox/.hot_refresh*.lock 中是否有任意一个被持有
+any_hot_lock_held() {
+    python3 - "$INBOX_DIR" <<PYEOF
+import fcntl, sys, os, glob
+inbox = sys.argv[1]
+pattern = os.path.join(inbox, ".hot_refresh*.lock")
+for lock_path in glob.glob(pattern):
+    if not os.path.exists(lock_path):
+        continue
+    try:
+        with open(lock_path, "r+") as f:
+            fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fcntl.flock(f, fcntl.LOCK_UN)
+    except (BlockingIOError, OSError):
+        sys.exit(0)   # 有锁被持有 → exit 0（阻塞中）
+sys.exit(1)           # 所有锁均空闲 → exit 1（不阻塞）
 PYEOF
 }
 
-while lock_is_held && [ "$waited" -lt "$MAX_WAIT" ]; do
-    echo "⏳ [同步等待] hot_refresh.py 正在写入，等待 ${waited}s / ${MAX_WAIT}s..."
+while any_hot_lock_held && [ "$waited" -lt "$MAX_WAIT" ]; do
+    echo "⏳ [同步等待] hot_refresh 正在写入，等待 ${waited}s / ${MAX_WAIT}s..."
     sleep 1
     waited=$(( waited + 1 ))
 done
 
-if lock_is_held; then
+if any_hot_lock_held; then
     echo "⚠️ [同步中止] 写入锁持续超过 ${MAX_WAIT} 秒，本次同步跳过，请手动检查。"
     exit 1
 fi
