@@ -101,3 +101,62 @@ def test_code_block_unclosed_treated_to_eof():
     lines = ["```python", "def bar(): pass"]
     ranges = _find_code_block_ranges(lines)
     assert ranges == [(0, 1)]
+
+
+# ─── Task 4: 精准裁剪模式 ──────────────────────────────────────────────────
+
+from context_dehydrator import dehydrate_context
+
+SAMPLE_MD = """\
+---
+type: concept
+project: member
+aliases: [BrainOS]
+---
+# LLM-Brain OS 完整架构
+
+## 分层结构
+
+L1 基础设施层内容。
+
+## 三条数据流
+
+摄入流描述。
+"""
+
+
+def test_precise_mode_extracts_hit_section():
+    """精准模式：命中行所在段落应被保留，其他段落省略"""
+    lines = SAMPLE_MD.split("\n")
+    hit_line = next(i + 1 for i, l in enumerate(lines) if "摄入流描述" in l)
+    result = dehydrate_context(SAMPLE_MD, [hit_line], "brain-os-architecture")
+    assert "摄入流描述" in result
+    assert "L1 基础设施层内容" not in result
+
+
+def test_precise_mode_breadcrumb_injected():
+    """精准模式：面包屑路径应注入到 chunk 顶部"""
+    lines = SAMPLE_MD.split("\n")
+    hit_line = next(i + 1 for i, l in enumerate(lines) if "摄入流描述" in l)
+    result = dehydrate_context(SAMPLE_MD, [hit_line], "brain-os-architecture")
+    assert "Context Scope" in result
+    assert "三条数据流" in result
+
+
+def test_precise_mode_preserves_wikilinks():
+    """双链在精准模式下应完整保留"""
+    md = "---\ntype: concept\n---\n# 标题\n\n## 节\n\n参见 [[sdk_architecture]]。\n"
+    result = dehydrate_context(md, [8], "test")
+    assert "[[sdk_architecture]]" in result
+
+
+def test_precise_mode_alias_hit_lineno0_falls_back_to_summary():
+    """lineno=0（alias命中）应 fallback 到全文摘要模式，不返回空字符串"""
+    result = dehydrate_context(SAMPLE_MD, [0], "brain-os-architecture")
+    assert len(result) > 0
+    assert "LLM-Brain OS 完整架构" in result
+
+
+def test_precise_mode_empty_input():
+    result = dehydrate_context("", [1], "empty")
+    assert result == ""
