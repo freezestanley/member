@@ -87,25 +87,13 @@ def _python_clean(text: str) -> str:
 def _summary_mode(raw_md: str, file_stem: str) -> str:
     """
     全文摘要模式（BM25路径 / alias命中 fallback）：
-    提取 frontmatter 后的所有 H1/H2 标题 + 每段首句。
+    剥离 frontmatter + 去噪，保留完整正文内容。
+    脱水收益来自去除 frontmatter（通常占 15-25%）、HTML 注释、死空格，
+    而不是截断内容——BM25 只知道"哪篇文档相关"，不知道哪行，完整正文是最安全的上下文。
     """
     body = _FRONTMATTER_RE.sub("", raw_md, count=1)
-    lines = body.split("\n")
-    segments = []
-    breadcrumb_prefix = f"[📍 Summary: {file_stem}]"
-    segments.append(breadcrumb_prefix)
-    last_was_heading = False
-    for line in lines:
-        stripped = line.strip()
-        if re.match(r"^#{1,2}\s+", stripped):
-            segments.append(line)
-            last_was_heading = True
-        elif stripped and last_was_heading:
-            segments.append(line)
-            last_was_heading = False
-        elif not stripped:
-            last_was_heading = False
-    return _python_clean("\n".join(segments)).strip()
+    header = f"[📍 Source: {file_stem}]\n"
+    return (header + _python_clean(body)).strip()
 
 
 def dehydrate_context(raw_md: str, hit_lines: list, file_stem: str) -> str:

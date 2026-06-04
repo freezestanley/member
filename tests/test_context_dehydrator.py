@@ -151,10 +151,12 @@ def test_precise_mode_preserves_wikilinks():
 
 
 def test_precise_mode_alias_hit_lineno0_falls_back_to_summary():
-    """lineno=0（alias命中）应 fallback 到全文摘要模式，不返回空字符串"""
+    """lineno=0（alias命中）应 fallback 到全文正文模式，不返回空字符串，内容完整"""
     result = dehydrate_context(SAMPLE_MD, [0], "brain-os-architecture")
     assert len(result) > 0
     assert "LLM-Brain OS 完整架构" in result
+    # 全文正文模式：摘要内容不应只有标题，应包含正文
+    assert "摄入流描述" in result
 
 
 def test_precise_mode_empty_input():
@@ -168,13 +170,13 @@ from context_dehydrator import assemble_final_context
 
 
 def test_assemble_bm25_path():
-    """BM25路径：recalled_results 无 hit_lines 字段，走全文摘要模式"""
+    """BM25路径：recalled_results 无 hit_lines 字段，走全文正文模式"""
     results = [
         {"content": SAMPLE_MD, "stem": "brain-os-architecture", "score": 0.9},
     ]
     output = assemble_final_context(results, max_total_tokens=8000)
     assert "LLM-Brain OS 完整架构" in output
-    assert "Summary" in output
+    assert "Source" in output
 
 
 def test_assemble_rg_path():
