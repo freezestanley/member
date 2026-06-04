@@ -19,3 +19,4 @@
 
 ### 📂 项目仓库：`member`
 - [LLM-Brain OS 完整架构](project_exclusives/member/brain-os-architecture.md) — 记忆仓库 5 层分层架构、三条数据流、脚本职责与关键约束
+- [Context Dehydration Pipeline](project_exclusives/member/context-dehydration-pipeline.md) — L4.5 脱水管道五步架构：双链保护、大纲感知裁剪、面包屑注入、Python 压榨、token 预算分配
