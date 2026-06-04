@@ -24,15 +24,17 @@ allowed-tools:
 
 ## 参数说明
 
-- `$ARGUMENTS` 格式：`<检索词> [--scope project|global]`
+- `$ARGUMENTS` 格式：`<检索词> [--scope project|global] [--dry]`
 - `--scope project`：仅审计当前项目私有记忆 + 公共记忆（global_concepts）
 - `--scope global`（默认）：审计全库所有项目私有记忆 + 公共记忆，跨项目分布
+- `--dry`：关闭脱水管道，直接读取笔记原文（调试用）。缺省时默认启用脱水。
 
 ## 执行
 
 1. 如果没有检索词，先要求补充，不要运行空查询。
 2. 解析 `$ARGUMENTS`：
    - 提取 `--scope` 值（project 或 global），缺省为 `global`
+   - 提取 `--dry` 标志：存在则 `DEHYDRATE=false`，缺省 `DEHYDRATE=true`
    - 剩余部分作为实际检索词
 3. 必须先执行第一级决策：首选命中（自身热记忆自查）。
    - 全面内省你当前的会话窗口（Chat Context Window）以及 `claude-mem` 即时缓冲区。
@@ -85,10 +87,23 @@ allowed-tools:
        mempalace search "<检索词>" --wing "wing_project_<当前项目名>" --limit 3
        ```
 8. 合并检索结果并输出"跨项目技术资产审计报告"：
-   - `公共规范沉淀`：列出 `wiki/global_concepts/` 中命中的笔记路径，并概括其主题或规则。
-   - `历史项目独占实例`：按 `project_exclusives/<项目名>/` 分组列出命中文件，说明各项目里记录的是实现、约束还是踩坑。
-   - `历史会话记忆`：列出 MemPalace 命中的 wing、条目标识和必要短摘录；只允许基于真实命中做精简，不得伪造原话。
-   - `结论`：总结该关键词更偏"通用规范"还是"项目专属经验"，并在必要时提示下一步用 `/brain-query-rg` 深读。
+   - 本地 Wiki 命中部分（rg结果）：
+     - 若 `DEHYDRATE=false`：读取命中笔记全文
+     - 若 `DEHYDRATE=true`（默认）：
+       将 rg 命中结果整理为 `文件路径:行号` 格式，同一文件多个命中行合并，然后：
+       ```bash
+       python3 /Users/za-stanlexu/Documents/member/member/scripts/context_dehydrator.py \
+         --mode precise \
+         --hits <文件路径1>:<行号1,行号2> <文件路径2>:<行号3> \
+         --max-tokens 4000
+       ```
+       将脚本 stdout 作为本地 Wiki 部分的内容。
+   - MemPalace 历史记忆部分：原样使用，不脱水。
+   - 基于以上内容输出审计报告，包含：
+     - `公共规范沉淀`：列出 `wiki/global_concepts/` 中命中的笔记路径，并概括其主题或规则。
+     - `历史项目独占实例`：按 `project_exclusives/<项目名>/` 分组列出命中文件，说明各项目里记录的是实现、约束还是踩坑。
+     - `历史会话记忆`：列出 MemPalace 命中的 wing、条目标识和必要短摘录；只允许基于真实命中做精简，不得伪造原话。
+     - `结论`：总结该关键词更偏"通用规范"还是"项目专属经验"，并在必要时提示下一步用 `/brain-query-rg` 深读。
 9. 回写本地 Wiki 命中笔记的 frontmatter：
    - 逐个打开命中文件，不要批量跳过
    - 校验 frontmatter 是否存在
@@ -159,6 +174,7 @@ allowed-tools:
 
 结论：<该关键词的归属判断与建议动作>
 补充说明：<如无可写"无">
+脱水状态：<已启用 | 已关闭（--dry 模式）>
 ```
 
 如果命中第一级而未检索中央知识库，使用以下模板：

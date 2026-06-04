@@ -22,15 +22,17 @@ allowed-tools:
 
 ## 参数说明
 
-- `$ARGUMENTS` 格式：`<查询词> [--scope project|global]`
+- `$ARGUMENTS` 格式：`<查询词> [--scope project|global] [--dry]`
 - `--scope project`（默认）：仅搜索当前项目私有记忆 + 公共记忆（global_concepts）
 - `--scope global`：搜索全库所有项目私有记忆 + 公共记忆，跨项目检索
+- `--dry`：关闭脱水管道，直接读取笔记原文（调试用）。缺省时默认启用脱水。
 
 ## 执行
 
 1. 如果没有查询词，先要求补充，不要运行空查询。
 2. 解析 `$ARGUMENTS`：
    - 提取 `--scope` 值（project 或 global），缺省为 `project`
+   - 提取 `--dry` 标志：存在则 `DEHYDRATE=false`，缺省 `DEHYDRATE=true`
    - 剩余部分作为实际查询词
 3. 必须先执行第一级决策：首选命中（自身热记忆自查）。
    - 全面内省你当前的会话窗口（Chat Context Window）以及 `claude-mem` 即时缓冲区。
@@ -65,7 +67,18 @@ allowed-tools:
      ```
 7. 解析命中文件路径（去重，取前 3 个不同文件）。根目录是：
    - `/Users/za-stanlexu/Documents/member/member`
-8. 读取命中笔记全文。未读完之前，不要回答。
+8. 读取召回内容：
+   - 若 `DEHYDRATE=false`（`--dry` 模式）：直接读取命中笔记全文，不做处理。
+   - 若 `DEHYDRATE=true`（默认）：
+     将步骤 6 的 rg 命中结果整理为 `文件路径:行号` 格式，同一文件多个命中行合并为逗号分隔，然后：
+     ```bash
+     python3 /Users/za-stanlexu/Documents/member/member/scripts/context_dehydrator.py \
+       --mode precise \
+       --hits <文件路径1>:<行号1,行号2> <文件路径2>:<行号3> \
+       --max-tokens 8000
+     ```
+     将脚本 stdout 作为上下文，不再读取原文全文。
+   - 未获得内容前，不要回答。
 9. 仅基于已读笔记回答：
    - 优先使用笔记中的结论、约束、定义、经验
    - 如果多篇笔记冲突，明确指出冲突
@@ -135,6 +148,7 @@ allowed-tools:
 
 回写结果：<已更新 | 部分失败 | 未更新>
 补充说明：<如无可写"无">
+脱水状态：<已启用 | 已关闭（--dry 模式）>
 ```
 
 如果命中第一级而未检索中央知识库，使用以下模板：
