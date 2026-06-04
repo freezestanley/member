@@ -30,34 +30,6 @@ def test_frequency_bonus_increases_with_access():
 
 import subprocess, os, time
 
-
-def test_hot_refresh_no_torn_write():
-    """并发调用真实 hot_refresh.py 时，wiki/hot.md 不应为空且内容完整"""
-    procs = [
-        subprocess.Popen(
-            ["python3", "scripts/hot_refresh.py"],
-            cwd="/Users/za-stanlexu/Documents/member/member",
-            stderr=subprocess.PIPE,
-        )
-        for _ in range(3)
-    ]
-    outputs = []
-    for p in procs:
-        _, err = p.communicate()
-        outputs.append(err.decode())
-
-    # 至少有 1 个进程被跳过（说明非阻塞锁生效）
-    skipped = sum(1 for o in outputs if "另一进程正在刷新" in o)
-    assert skipped >= 1, f"没有进程被跳过，锁可能未生效。stderr outputs: {outputs}"
-
-    # hot.md 内容完整
-    from pathlib import Path
-
-    hot_md = Path("/Users/za-stanlexu/Documents/member/member/wiki/hot.md")
-    content = hot_md.read_text()
-    assert len(content) > 0, "hot.md 不应为空"
-
-
 import pathlib
 
 

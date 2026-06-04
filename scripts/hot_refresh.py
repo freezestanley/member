@@ -15,6 +15,7 @@ import argparse
 import fcntl
 import re
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -57,7 +58,7 @@ def extract_outline(text: str) -> list[str]:
     return lines
 
 
-def collect_notes(scan_dir: Path, wiki_root: Path) -> list[dict]:
+def collect_notes(scan_dir: Path) -> list[dict]:
     """扫描指定目录，收集所有 .md 笔记元数据。"""
     notes = []
     if not scan_dir.exists():
@@ -132,18 +133,20 @@ def atomic_write(target: Path, content: str, lock_file: Path) -> None:
     """带 fcntl 独占锁的原子写入。"""
     lock_file.parent.mkdir(parents=True, exist_ok=True)
     with open(lock_file, "w") as lf:
-        start = __import__("time").time()
+        start = time.time()
         while True:
             try:
                 fcntl.flock(lf, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 break
             except BlockingIOError:
-                if __import__("time").time() - start > 10.0:
+                if time.time() - start > 10.0:
                     raise RuntimeError(f"获取锁超时（>10s）：{lock_file}")
-                __import__("time").sleep(0.3)
+                time.sleep(0.3)
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(content, encoding="utf-8")
-        fcntl.flock(lf, fcntl.LOCK_UN)
+        try:
+            target.write_text(content, encoding="utf-8")
+        finally:
+            fcntl.flock(lf, fcntl.LOCK_UN)
 
 
 def main():
@@ -168,7 +171,7 @@ def main():
         scan_dir = wiki_root / "global_concepts"
         target = wiki_root / "global_hot.md"
         lock_file = inbox / ".hot_refresh_global.lock"
-        notes = collect_notes(scan_dir, wiki_root)
+        notes = collect_notes(scan_dir)
         notes.sort(key=lambda n: (n["weight"], n["access"]), reverse=True)
         top = notes[:GLOBAL_TOP_N]
         if not top:
@@ -184,7 +187,7 @@ def main():
         scan_dir = wiki_root / "project_exclusives" / project_name
         target = scan_dir / "hot.md"
         lock_file = inbox / f".hot_refresh_{project_name}.lock"
-        notes = collect_notes(scan_dir, wiki_root)
+        notes = collect_notes(scan_dir)
         notes.sort(key=lambda n: (n["weight"], n["access"]), reverse=True)
         top = notes[:PROJECT_TOP_M]
         if not top:
