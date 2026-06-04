@@ -192,16 +192,46 @@ def test_assemble_rg_path():
 
 
 def test_assemble_token_budget_truncates():
-    """超出 max_total_tokens 时应截断并添加警告（预算设为 1，必然触发）"""
+    """第二个文档超出预算时应追加 SYSTEM WARNING 并停止。
+    预算设为足够容纳第一个小文档、但不够容纳第二个大文档，触发警告路径。"""
+    small_md = "# 标题\n\n内容\n"
     big_md = "# 标题\n\n" + ("这是很长的内容行。\n" * 500)
     results = [
-        {"content": big_md, "stem": "doc1", "score": 0.9},
+        {"content": small_md, "stem": "doc1", "score": 0.9},
         {"content": big_md, "stem": "doc2", "score": 0.8},
     ]
-    output = assemble_final_context(results, max_total_tokens=1)
+    output = assemble_final_context(results, max_total_tokens=50)
     assert "SYSTEM WARNING" in output
 
 
 def test_assemble_empty_results():
     output = assemble_final_context([], max_total_tokens=8000)
     assert output == ""
+
+
+def test_assemble_oversized_top_hit_is_truncated_not_dropped():
+    """首个文档超出 token 预算时，应截断包含而非完全丢弃。"""
+    from scripts.context_dehydrator import assemble_final_context
+    # 构造一个约 700 字符（~200 token）的大文档
+    big_content = "---\ntype: concept\n---\n# 大笔记\n\n" + "内容行\n" * 100
+    results = [{"content": big_content, "stem": "big_note", "score": 1.0}]
+    # 设置极小预算（50 token），强制触发截断路径
+    output = assemble_final_context(results, max_total_tokens=50)
+    assert output, "超出预算的首个文档不应返回空字符串"
+    assert "big_note" in output or "大笔记" in output or "截断" in output, \
+        "输出应包含截断内容而非仅有警告"
+    assert "[...截断" in output, "应有截断标记"
+
+
+def test_assemble_second_oversized_doc_appends_warning():
+    """第二个文档超出预算时，追加警告后停止，不影响第一个文档的完整输出。"""
+    from scripts.context_dehydrator import assemble_final_context
+    small_content = "---\ntype: concept\n---\n# 小笔记\n\n内容\n"
+    big_content = "---\ntype: concept\n---\n# 大笔记\n\n" + "内容行\n" * 200
+    results = [
+        {"content": small_content, "stem": "small_note", "score": 1.0},
+        {"content": big_content, "stem": "big_note", "score": 0.5},
+    ]
+    output = assemble_final_context(results, max_total_tokens=100)
+    assert "small_note" in output or "小笔记" in output, "第一个文档应完整输出"
+    assert "SYSTEM WARNING" in output, "应有截断警告"

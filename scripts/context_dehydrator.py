@@ -207,10 +207,17 @@ def assemble_final_context(recalled_results: list, max_total_tokens: int = 8000)
         hit_lines = item.get("hit_lines", [])
         chunk = dehydrate_context(item["content"], hit_lines, item["stem"])
         chunk_tokens = len(chunk) / 3.5
-        if used_tokens + chunk_tokens > max_total_tokens:
-            chunks.append(
-                "\n\n[⚠️ SYSTEM WARNING: Sub-topical documents truncated due to token limit budget.]"
-            )
+        remaining_tokens = max_total_tokens - used_tokens
+        if chunk_tokens > remaining_tokens:
+            if not chunks:
+                # 首个文档超出预算：截断到剩余配额，保证至少返回部分内容
+                max_chars = int(remaining_tokens * 3.5)
+                chunk = chunk[:max_chars] + "\n[...截断：文档超出 token 预算]"
+                chunks.append(chunk)
+            else:
+                chunks.append(
+                    "\n\n[⚠️ SYSTEM WARNING: Sub-topical documents truncated due to token limit budget.]"
+                )
             break
         chunks.append(chunk)
         used_tokens += chunk_tokens
