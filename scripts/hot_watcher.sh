@@ -37,14 +37,12 @@ fswatch -r -e ".*" -i "\.md$" "$WIKI_DIR" | while read -r changed_file; do
     # 路由剪裁
     if [[ "$changed_file" =~ wiki/global_concepts/ ]]; then
         echo "[hot_watcher] → 全局热记忆刷新"
-        flock -n "$INBOX_DIR/.hot_refresh_global.lock" \
-            python3 "$SCRIPT" --global &
+        python3 "$SCRIPT" --global &
 
     elif [[ "$changed_file" =~ wiki/project_exclusives/([^/]+)/ ]]; then
         PROJECT_NAME="${BASH_REMATCH[1]}"
         echo "[hot_watcher] → 项目 [$PROJECT_NAME] 热记忆刷新"
-        flock -n "$INBOX_DIR/.hot_refresh_${PROJECT_NAME}.lock" \
-            python3 "$SCRIPT" --project "$PROJECT_NAME" &
+        python3 "$SCRIPT" --project "$PROJECT_NAME" &
     else
         echo "[hot_watcher] 路径不匹配已知路由，跳过：$changed_file"
         continue
