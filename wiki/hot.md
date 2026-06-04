@@ -1,5 +1,5 @@
 # 知识热度榜 Top 30
-> 更新时间：2026-06-03 19:07　　数据来源：全库笔记 current_weight + access_count
+> 更新时间：2026-06-04 15:57　　数据来源：全库笔记 current_weight + access_count
 
 ### 1. [[sdk_architecture]] — OpenClaw Browser SDK 架构  ·  🧠 1.358  ·  📊 6 次
 - OpenClaw Browser SDK 架构
@@ -22,7 +22,7 @@
   - 边界
   - 相关概念
 
-### 3. [[wiki-hot-watcher]] — wiki/hot.md 自动刷新机制  ·  🧠 1.113  ·  📊 2 次
+### 3. [[wiki-hot-watcher]] — wiki/hot.md 自动刷新机制  ·  🧠 1.113  ·  📊 3 次
 - wiki/hot.md 自动刷新机制
   - 结论
   - 架构
@@ -37,7 +37,7 @@
   - 边界
   - 相关概念
 
-### 4. [[frontmatter-aliases-检索增强]] — Frontmatter aliases 字段：检索容错增强规范  ·  🧠 1.000  ·  📊 1 次
+### 4. [[frontmatter-aliases-检索增强]] — Frontmatter aliases 字段：检索容错增强规范  ·  🧠 1.000  ·  📊 2 次
 - Frontmatter aliases 字段：检索容错增强规范
   - 结论
   - 标准格式
@@ -47,7 +47,7 @@
   - 适用边界
   - 关联概念
 
-### 5. [[brain-os-architecture]] — LLM-Brain OS 完整架构  ·  🧠 1.000  ·  📊 1 次
+### 5. [[brain-os-architecture]] — LLM-Brain OS 完整架构  ·  🧠 1.000  ·  📊 2 次
 - LLM-Brain OS 完整架构
   - 结论
   - 分层结构
@@ -59,7 +59,17 @@
   - 相关文档
   - 相关概念
 
-### 6. [[wiki-log-format]] — wiki/log.md 查询日志规范  ·  🧠 0.977  ·  📊 1 次
+### 6. [[brain-commands-scope-parameter]] — brain-* 命令 `--scope` 参数约定  ·  🧠 1.000  ·  📊 1 次
+- brain-* 命令 `--scope` 参数约定
+  - 结论
+  - 参数规则
+  - 边界
+  - 使用示例
+- query 系：加 --scope global 扩展到全库
+- search 系：加 --scope project 收窄到当前项目
+  - 关联
+
+### 7. [[wiki-log-format]] — wiki/log.md 查询日志规范  ·  🧠 0.977  ·  📊 2 次
 - wiki/log.md 查询日志规范
   - 结论
   - 格式
