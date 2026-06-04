@@ -626,3 +626,12 @@ def test_empty_project_generates_skeleton(tmp_path):
     proj_hot = wiki_root / "wiki" / "project_exclusives" / "newproj" / "hot.md"
     assert proj_hot.exists()
     assert "暂无高权笔记" in proj_hot.read_text(encoding="utf-8")
+
+
+def test_watcher_script_syntax():
+    """hot_watcher.sh bash 语法检查。"""
+    result = subprocess.run(
+        ["bash", "-n", str(REPO_ROOT / "scripts" / "hot_watcher.sh")],
+        capture_output=True, text=True
+    )
+    assert result.returncode == 0, f"bash 语法错误：{result.stderr}"
