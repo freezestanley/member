@@ -95,3 +95,8 @@ access_count: 1
 - 文档规则必须尽量与仓库中现有脚本行为一致，不能凭空声明系统尚未实现的能力。
 - 如果脚本能力不足以完成某条规则，应先说明差异，再选择最接近的可执行方案。
 - 优先维护 `wiki/concepts/` 的可检索性、一致性和低噪音，而不是追求堆积笔记数量。
+
+### 热记忆挂载（常驻上下文）
+- **当前项目热记忆**：`wiki/project_exclusives/member/hot.md`（由 `hot_refresh.py --project member` 自动刷新）
+- **全局通用热记忆**：`wiki/global_hot.md`（由 `hot_refresh.py --global` 自动刷新，TOP_N=8）
+- **跨项目切换规则**：切换项目前必须执行 `/clear`，防止旧项目热记忆残留。
