@@ -33,3 +33,33 @@ def test_heading_parser_no_heading():
     lines = ["纯文本内容。", "第二行。"]
     hmap = _build_hierarchy_map(lines)
     assert hmap[0] == {1: None, 2: None, 3: None}
+
+
+# ─── Task 2: 双链占位符保护 ────────────────────────────────────────────────
+
+from context_dehydrator import _protect_links, _restore_links
+
+
+def test_protect_links_replaces_wikilinks():
+    text = "参见 [[sdk_architecture]] 和 [[brain-os-architecture]]。"
+    protected, cache = _protect_links(text)
+    assert "[[sdk_architecture]]" not in protected
+    assert "[[brain-os-architecture]]" not in protected
+    assert "__BRAIN_LINK_0__" in protected
+    assert "__BRAIN_LINK_1__" in protected
+    assert cache == ["sdk_architecture", "brain-os-architecture"]
+
+
+def test_restore_links_recovers_wikilinks():
+    text = "参见 __BRAIN_LINK_0__ 和 __BRAIN_LINK_1__。"
+    cache = ["sdk_architecture", "brain-os-architecture"]
+    restored = _restore_links(text, cache)
+    assert "[[sdk_architecture]]" in restored
+    assert "[[brain-os-architecture]]" in restored
+
+
+def test_protect_restore_roundtrip():
+    original = "引用 [[概念A]] 和 [[概念B]]，结束。"
+    protected, cache = _protect_links(original)
+    restored = _restore_links(protected, cache)
+    assert restored == original
