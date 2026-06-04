@@ -20,3 +20,6 @@
 ### 📂 项目仓库：`member`
 - [LLM-Brain OS 完整架构](project_exclusives/member/brain-os-architecture.md) — 记忆仓库 5 层分层架构、三条数据流、脚本职责与关键约束
 - [Context Dehydration Pipeline](project_exclusives/member/context-dehydration-pipeline.md) — L4.5 脱水管道五步架构：双链保护、大纲感知裁剪、面包屑注入、Python 压榨、token 预算分配
+- [热记忆双轨路由](project_exclusives/member/hot-dual-track-routing.md) — global_hot.md + 项目 hot.md 双轨隔离，fswatch 按路径路由，消除跨项目 Token 污染
+- [BM25 持久化 Cache 索引](project_exclusives/member/bm25-cache-index.md) — mtime 增量比对决定是否重建，千篇笔记检索降至毫秒级
+- [记忆权重计算公式](project_exclusives/member/memory-weight-formula.md) — 时间衰减×频率奖励复合公式，冷启动 access_count=1 修复，归档阈值 0.15
