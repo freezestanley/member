@@ -13,5 +13,8 @@
 - [[sdk_architecture]]
 - [[sdk_diff_node_vs_browser]]
 
+### 📂 项目仓库：`dome`
+- [dome 项目沟通语言规范](project_exclusives/dome/communication-language.md) — dome 项目全程使用中文沟通
+
 ### 📂 项目仓库：`member`
 - [LLM-Brain OS 完整架构](project_exclusives/member/brain-os-architecture.md) — 记忆仓库 5 层分层架构、三条数据流、脚本职责与关键约束
