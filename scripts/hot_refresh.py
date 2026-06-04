@@ -1,41 +1,35 @@
 #!/usr/bin/env python3
 """
-hot_refresh.py — 扫描全库笔记，按 current_weight 降序取 Top 30，重写 wiki/hot.md。
-
-输出格式（大纲树模式）：
-  ### [[笔记文件名]] — 笔记标题  ·  🧠 weight: 1.139  ·  📊 access: 5
-  - 一级标题内容
-    - 二级标题内容
-      - 三级标题内容
+hot_refresh.py — 双轨路由热记忆刷新。
 
 用法：
-    python3 hot_refresh.py
+    python3 hot_refresh.py --global [--wiki-root PATH]
+    python3 hot_refresh.py --project <name> [--wiki-root PATH]
+
+--global   : 扫描 global_concepts/，写入 wiki/global_hot.md（TOP_N=8）
+--project  : 扫描 project_exclusives/<name>/，写入其下 hot.md（TOP_M=20）
+--wiki-root: 指定 wiki 根目录（测试时覆盖，默认自动推导）
 """
 
+import argparse
+import fcntl
 import re
 import sys
 from datetime import datetime
 from pathlib import Path
 
-WIKI_ROOT = Path(__file__).parent.parent / "wiki"
-HOT_MD = WIKI_ROOT / "hot.md"
-TOP_N = 30
+GLOBAL_TOP_N = 8
+PROJECT_TOP_M = 20
 
-# 扫描范围：公共概念 + 所有项目专属
-SCAN_DIRS = [
-    WIKI_ROOT / "global_concepts",
-    WIKI_ROOT / "project_exclusives",
-]
+HEADING_RE = re.compile(r'^(#{1,3})\s+(.+)$')
 
 
 def parse_frontmatter(text: str) -> dict:
-    """提取 YAML frontmatter 中的关键字段，解析失败返回空 dict。"""
     m = re.match(r'^---\s*\n(.*?)\n---\s*\n', text, re.DOTALL)
     if not m:
         return {}
-    fm_text = m.group(1)
     result = {}
-    for line in fm_text.splitlines():
+    for line in m.group(1).splitlines():
         kv = re.match(r'^(\w+):\s*(.+)$', line.strip())
         if kv:
             result[kv.group(1)] = kv.group(2).strip()
@@ -43,7 +37,6 @@ def parse_frontmatter(text: str) -> dict:
 
 
 def extract_title(text: str) -> str:
-    """从正文提取第一个 # 标题，没有则返回文件名。"""
     for line in text.splitlines():
         m = re.match(r'^#+\s+(.+)$', line)
         if m:
@@ -51,136 +44,156 @@ def extract_title(text: str) -> str:
     return ""
 
 
-HEADING_RE = re.compile(r'^(#{1,3})\s+(.+)$')
-
-
 def extract_outline(text: str) -> list[str]:
-    """从正文提取 H1-H3 标题，返回缩进大纲行列表。
-    H1 → "- 标题"，H2 → "  - 标题"，H3 → "    - 标题"
-    跳过 Frontmatter 中的内容（只处理 --- 之后的正文）。
-    """
-    # 剥离 Frontmatter，只对正文提取标题
     body = re.sub(r'^---[\s\S]+?---\n', '', text, count=1, flags=re.MULTILINE)
     lines = []
     for line in body.splitlines():
         m = HEADING_RE.match(line)
         if m:
-            level = len(m.group(1))          # 1, 2, 3
+            level = len(m.group(1))
             title = m.group(2).strip()
-            indent = "  " * (level - 1)      # H1="", H2="  ", H3="    "
+            indent = "  " * (level - 1)
             lines.append(f"{indent}- {title}")
     return lines
 
 
-def collect_notes() -> list[dict]:
-    """遍历扫描目录，收集所有 .md 笔记的元数据（含原始正文，用于大纲提取）。"""
+def collect_notes(scan_dir: Path, wiki_root: Path) -> list[dict]:
+    """扫描指定目录，收集所有 .md 笔记元数据。"""
     notes = []
-    for scan_dir in SCAN_DIRS:
-        if not scan_dir.exists():
+    if not scan_dir.exists():
+        return notes
+    for md_file in scan_dir.rglob("*.md"):
+        # 跳过自身（hot.md）
+        if md_file.name == "hot.md" or md_file.name == "global_hot.md":
             continue
-        for md_file in scan_dir.rglob("*.md"):
-            # 跳过 hot.md / log.md / index.md 等顶级管理文件
-            if md_file.parent == WIKI_ROOT:
-                continue
-            try:
-                text = md_file.read_text(encoding="utf-8")
-            except Exception:
-                continue
-
-            fm = parse_frontmatter(text)
-            if not fm:
-                continue
-
-            title = extract_title(text) or md_file.stem
-            rel_path = md_file.relative_to(WIKI_ROOT.parent)  # 相对于 member 根目录
-
-            try:
-                weight = float(fm.get("current_weight", fm.get("initial_weight", "1.0")))
-            except ValueError:
-                weight = 1.0
-
-            try:
-                access = int(fm.get("access_count", "0"))
-            except ValueError:
-                access = 0
-
-            notes.append({
-                "title": title,
-                "stem": md_file.stem,        # 用于 [[双链]] 锚点
-                "path": str(rel_path),
-                "weight": weight,
-                "access": access,
-                "outline": extract_outline(text),  # 预提取大纲，render 时直接用
-            })
-
+        try:
+            text = md_file.read_text(encoding="utf-8")
+        except Exception:
+            continue
+        fm = parse_frontmatter(text)
+        if not fm:
+            continue
+        title = extract_title(text) or md_file.stem
+        try:
+            weight = float(fm.get("current_weight", fm.get("initial_weight", "1.0")))
+        except ValueError:
+            weight = 1.0
+        try:
+            access = int(fm.get("access_count", "0"))
+        except ValueError:
+            access = 0
+        notes.append({
+            "title": title,
+            "stem": md_file.stem,
+            "weight": weight,
+            "access": access,
+            "outline": extract_outline(text),
+        })
     return notes
 
 
-def render_hot(notes: list[dict]) -> str:
-    """将热度 Top N 笔记渲染为大纲树格式。
-
-    格式（每篇笔记）：
-        ### [[文件名]] — 笔记标题  ·  🧠 weight: 1.139  ·  📊 access: 5
-        - 一级标题
-          - 二级标题
-            - 三级标题
-        （空行分隔）
-    """
+def render_hot(notes: list[dict], top_k: int = None, label: str = "") -> str:
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    if top_k is None:
+        top_k = len(notes)
     lines = [
-        f"# 知识热度榜 Top {TOP_N}",
-        f"> 更新时间：{now}　　数据来源：全库笔记 current_weight + access_count",
+        f"# 知识热度榜 Top {top_k} — {label}",
+        f"> 更新时间：{now}　　数据来源：current_weight + access_count",
+        "> [!WARNING]",
+        "> 本文件由 `hot_refresh.py` 自动生成，禁止手动编辑。",
         "",
     ]
     for i, note in enumerate(notes, 1):
-        # 条目标题行：序号 + 双链锚点 + 可读标题 + 权重/调用数
         header = (
             f"### {i}. [[{note['stem']}]] — {note['title']}"
             f"  ·  🧠 {note['weight']:.3f}  ·  📊 {note['access']} 次"
         )
         lines.append(header)
-
         if note["outline"]:
             lines.extend(note["outline"])
         else:
             lines.append("- *(无标题大纲)*")
-
-        lines.append("")   # 笔记间空行
-
+        lines.append("")
     return "\n".join(lines)
 
 
+def render_skeleton(project_name: str) -> str:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    return (
+        f"# 知识热度榜 — {project_name}\n"
+        f"> 更新时间：{now}\n"
+        "> [!WARNING]\n"
+        "> 本文件由 `hot_refresh.py` 自动生成，禁止手动编辑。\n\n"
+        "暂无高权笔记（该项目尚未有带 frontmatter 的 .md 笔记）。\n"
+    )
+
+
+def atomic_write(target: Path, content: str, lock_file: Path) -> None:
+    """带 fcntl 独占锁的原子写入。"""
+    lock_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(lock_file, "w") as lf:
+        start = __import__("time").time()
+        while True:
+            try:
+                fcntl.flock(lf, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except BlockingIOError:
+                if __import__("time").time() - start > 10.0:
+                    raise RuntimeError(f"获取锁超时（>10s）：{lock_file}")
+                __import__("time").sleep(0.3)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+        fcntl.flock(lf, fcntl.LOCK_UN)
+
+
 def main():
-    import fcntl
+    parser = argparse.ArgumentParser(description="hot_refresh 双轨路由")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--global", dest="global_mode", action="store_true",
+                       help="刷新全局热记忆 wiki/global_hot.md")
+    group.add_argument("--project", metavar="NAME",
+                       help="刷新指定项目热记忆 wiki/project_exclusives/<NAME>/hot.md")
+    parser.add_argument("--wiki-root", metavar="PATH",
+                        help="覆盖 wiki 根目录（测试用）")
+    args = parser.parse_args()
 
-    LOCK_FILE = Path(__file__).parent.parent / "_inbox" / ".hot_refresh.lock"
-    LOCK_FILE.parent.mkdir(parents=True, exist_ok=True)
+    if args.wiki_root:
+        wiki_root = Path(args.wiki_root)
+    else:
+        wiki_root = Path(__file__).parent.parent / "wiki"
 
-    _lock_fh = open(LOCK_FILE, "w")
-    try:
-        fcntl.flock(_lock_fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except BlockingIOError:
-        print("[hot_refresh] 另一进程正在刷新，本次跳过。", file=sys.stderr)
-        _lock_fh.close()
-        sys.exit(0)
+    inbox = wiki_root.parent / "_inbox"
 
-    try:
-        notes = collect_notes()
-        if not notes:
-            print("[hot_refresh] 未找到任何笔记，hot.md 未更新。", file=sys.stderr)
-            sys.exit(0)
-
+    if args.global_mode:
+        scan_dir = wiki_root / "global_concepts"
+        target = wiki_root / "global_hot.md"
+        lock_file = inbox / ".hot_refresh_global.lock"
+        notes = collect_notes(scan_dir, wiki_root)
         notes.sort(key=lambda n: (n["weight"], n["access"]), reverse=True)
-        top = notes[:TOP_N]
+        top = notes[:GLOBAL_TOP_N]
+        if not top:
+            content = render_skeleton("global")
+            print("[hot_refresh] --global: 全局无笔记，写骨架。", file=sys.stderr)
+        else:
+            content = render_hot(top, GLOBAL_TOP_N, "全局通用知识")
+            print(f"[hot_refresh] --global: 写入 {len(top)} 条 → {target}")
+        atomic_write(target, content, lock_file)
 
-        HOT_MD.write_text(render_hot(top), encoding="utf-8")
-        print(f"[hot_refresh] 已更新 hot.md，共 {len(top)} 条记录（全库 {len(notes)} 篇笔记）。")
-    finally:
-        fcntl.flock(_lock_fh, fcntl.LOCK_UN)
-        _lock_fh.close()
-        # 注意：故意不删除 LOCK_FILE，锁文件是持久标记。
-        # 进程持有 flock 期间 vault_sync.sh 通过 flock -n 探测锁状态，
-        # 而非通过文件是否存在来判断。
+    else:
+        project_name = args.project
+        scan_dir = wiki_root / "project_exclusives" / project_name
+        target = scan_dir / "hot.md"
+        lock_file = inbox / f".hot_refresh_{project_name}.lock"
+        notes = collect_notes(scan_dir, wiki_root)
+        notes.sort(key=lambda n: (n["weight"], n["access"]), reverse=True)
+        top = notes[:PROJECT_TOP_M]
+        if not top:
+            content = render_skeleton(project_name)
+            print(f"[hot_refresh] --project {project_name}: 无笔记，写骨架。", file=sys.stderr)
+        else:
+            content = render_hot(top, PROJECT_TOP_M, f"项目 {project_name}")
+            print(f"[hot_refresh] --project {project_name}: 写入 {len(top)} 条 → {target}")
+        atomic_write(target, content, lock_file)
 
 
 if __name__ == "__main__":

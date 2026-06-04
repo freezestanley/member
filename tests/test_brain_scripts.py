@@ -564,3 +564,93 @@ except (BlockingIOError, OSError):
     assert result.returncode == 1, (
         f"锁文件不存在时应返回 1，实际 returncode={result.returncode}"
     )
+
+
+import subprocess, tempfile, shutil
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).parent.parent
+SCRIPT = REPO_ROOT / "scripts" / "hot_refresh.py"
+
+def _make_wiki(tmp: Path):
+    """在临时目录创建最小 wiki 结构用于测试。"""
+    gc = tmp / "wiki" / "global_concepts"
+    gc.mkdir(parents=True)
+    pe_member = tmp / "wiki" / "project_exclusives" / "member"
+    pe_member.mkdir(parents=True)
+
+    gc_note = gc / "global_rule.md"
+    gc_note.write_text(
+        "---\ntype: concept\nproject: global\ncurrent_weight: 2.0\naccess_count: 5\n---\n# 全局规范\n## 定义\n",
+        encoding="utf-8",
+    )
+    proj_note = pe_member / "member_arch.md"
+    proj_note.write_text(
+        "---\ntype: concept\nproject: member\ncurrent_weight: 1.5\naccess_count: 3\n---\n# Member 架构\n## 核心模块\n",
+        encoding="utf-8",
+    )
+    (tmp / "_inbox").mkdir(parents=True)
+    return tmp
+
+
+def test_global_route_writes_global_hot(tmp_path):
+    """--global 只写 wiki/global_hot.md，不创建 project hot.md。"""
+    wiki_root = _make_wiki(tmp_path)
+    result = subprocess.run(
+        ["python3", str(SCRIPT), "--global", "--wiki-root", str(wiki_root / "wiki")],
+        capture_output=True, text=True
+    )
+    assert result.returncode == 0, result.stderr
+    global_hot = wiki_root / "wiki" / "global_hot.md"
+    assert global_hot.exists(), "global_hot.md 应存在"
+    content = global_hot.read_text(encoding="utf-8")
+    assert "全局规范" in content
+    assert "Member 架构" not in content, "项目笔记不应出现在 global_hot.md"
+
+
+def test_project_route_writes_project_hot(tmp_path):
+    """--project member 只写 wiki/project_exclusives/member/hot.md。"""
+    wiki_root = _make_wiki(tmp_path)
+    result = subprocess.run(
+        ["python3", str(SCRIPT), "--project", "member", "--wiki-root", str(wiki_root / "wiki")],
+        capture_output=True, text=True
+    )
+    assert result.returncode == 0, result.stderr
+    proj_hot = wiki_root / "wiki" / "project_exclusives" / "member" / "hot.md"
+    assert proj_hot.exists(), "member/hot.md 应存在"
+    content = proj_hot.read_text(encoding="utf-8")
+    assert "Member 架构" in content
+    assert "全局规范" not in content, "全局笔记不应出现在项目 hot.md"
+
+
+def test_global_top_n_capped_at_8(tmp_path):
+    """global_hot.md 最多 8 条。"""
+    wiki_root = _make_wiki(tmp_path)
+    gc = wiki_root / "wiki" / "global_concepts"
+    for i in range(15):
+        note = gc / f"note_{i}.md"
+        note.write_text(
+            f"---\ntype: concept\nproject: global\ncurrent_weight: {1.0 + i * 0.1:.1f}\naccess_count: {i}\n---\n# Note {i}\n",
+            encoding="utf-8",
+        )
+    subprocess.run(
+        ["python3", str(SCRIPT), "--global", "--wiki-root", str(wiki_root / "wiki")],
+        capture_output=True
+    )
+    content = (wiki_root / "wiki" / "global_hot.md").read_text(encoding="utf-8")
+    count = content.count("### ")
+    assert count <= 8, f"global_hot.md 应 ≤8 条，实际 {count} 条"
+
+
+def test_empty_project_generates_skeleton(tmp_path):
+    """空项目应生成含警告的骨架 hot.md，不报错。"""
+    wiki_root = _make_wiki(tmp_path)
+    (wiki_root / "wiki" / "project_exclusives" / "newproj").mkdir(parents=True)
+    result = subprocess.run(
+        ["python3", str(SCRIPT), "--project", "newproj", "--wiki-root", str(wiki_root / "wiki")],
+        capture_output=True, text=True
+    )
+    assert result.returncode == 0, result.stderr
+    proj_hot = wiki_root / "wiki" / "project_exclusives" / "newproj" / "hot.md"
+    assert proj_hot.exists()
+    assert "暂无高权笔记" in proj_hot.read_text(encoding="utf-8")
