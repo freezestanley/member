@@ -1,3 +1,6 @@
+## 2026-06-04
+- 2026-06-04 11:59 brain-query "LLM-Brain OS 中央记忆仓库 技术方案" 命中1条：brain-os-architecture.md 完整架构
+
 ## 2026-06-03
 - 2026-06-03 11:53 brain-query "openclaw sdk 魔改版 区别" 命中2条：魔改版=browser-sdk原样复刻，唯一差异是transport.ts直接用WebSocket
 - 2026-06-03 19:14 brain-query "记忆仓库命令功能区别" 命中3条：检索到alias规范/hot-watcher/log-format，命令说明来自skill源文件

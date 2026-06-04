@@ -1,14 +1,14 @@
 ---
 type: concept
 created_at: 2026-06-03
-last_modified: 2026-06-03
+last_modified: 2026-06-04
 project: member
 aliases: [LLM-Brain OS, Brain OS, 记忆仓库架构, 知识图谱架构]
 code_symbols: [memory_manager, bm25_search, hot_refresh, vault_sync, log_append, extract_aliases]
 initial_weight: 1.0
 current_weight: 1.0
-last_activated: 2026-06-03
-access_count: 1
+last_activated: 2026-06-04
+access_count: 2
 ---
 
 # LLM-Brain OS 完整架构
