@@ -1,7 +1,7 @@
 ---
 type: concept
 created_at: 2026-06-02
-last_modified: 2026-06-03
+last_modified: 2026-06-04
 project: test-openclaw-sdk
 code_symbols:
   - OpenClaw
@@ -12,8 +12,8 @@ code_symbols:
   - useOpenClaw
 initial_weight: 1.0
 current_weight: 1.358
-last_activated: 2026-06-03
-access_count: 6
+last_activated: 2026-06-04
+access_count: 7
 ---
 
 # OpenClaw Browser SDK 架构

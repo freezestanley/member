@@ -6,6 +6,7 @@
 - [[wiki-hot-watcher]]
 - [[wiki-log-format]]
 - [brain-* 命令 --scope 参数约定](global_concepts/brain-commands-scope-parameter.md) — 4个brain命令的scope参数规则与缺省值设计
+- [2026 上海刘海粟美术馆展览日历](global_concepts/2026-上海刘海粟美术馆展览日历.md) — 2026全年分季度展览时间表（含当前在展快速判断）
 
 ## 🚜 二、 项目特异性独占研发逻辑与业务概念
 

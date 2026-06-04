@@ -8,7 +8,7 @@ code_symbols: [memory_manager, bm25_search, hot_refresh, vault_sync, log_append,
 initial_weight: 1.0
 current_weight: 1.0
 last_activated: 2026-06-04
-access_count: 2
+access_count: 3
 ---
 
 # LLM-Brain OS 完整架构
