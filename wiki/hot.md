@@ -1,7 +1,13 @@
-# 知识热度榜 Top 30
-> 更新时间：2026-06-04 15:57　　数据来源：全库笔记 current_weight + access_count
+> [!DEPRECATED]
+> 此文件已废弃。双轨路由启用后，请使用：
+> - 全局：`wiki/global_hot.md`
+> - 项目：`wiki/project_exclusives/<项目名>/hot.md`
+> 本文件将不再自动更新。
 
-### 1. [[sdk_architecture]] — OpenClaw Browser SDK 架构  ·  🧠 1.358  ·  📊 6 次
+# 知识热度榜 Top 30
+> 更新时间：2026-06-04 18:31　　数据来源：全库笔记 current_weight + access_count
+
+### 1. [[sdk_architecture]] — OpenClaw Browser SDK 架构  ·  🧠 1.358  ·  📊 7 次
 - OpenClaw Browser SDK 架构
   - 结论
   - 分层结构
@@ -11,7 +17,7 @@
   - 相关报告
   - 相关概念
 
-### 2. [[sdk_diff_node_vs_browser]] — 魔改版 vs 官方 SDK 差异对比  ·  🧠 1.322  ·  📊 5 次
+### 2. [[sdk_diff_node_vs_browser]] — 魔改版 vs 官方 SDK 差异对比  ·  🧠 1.322  ·  📊 7 次
 - 魔改版 vs 官方 SDK 差异对比
   - 结论
   - 三方关系
@@ -37,17 +43,14 @@
   - 边界
   - 相关概念
 
-### 4. [[frontmatter-aliases-检索增强]] — Frontmatter aliases 字段：检索容错增强规范  ·  🧠 1.000  ·  📊 2 次
-- Frontmatter aliases 字段：检索容错增强规范
-  - 结论
-  - 标准格式
-  - 两个检索引擎的处理机制
-    - BM25（bm25_search.py）
-    - rg_body_search（rg_body_search.py）
-  - 适用边界
-  - 关联概念
+### 4. [[2026-上海刘海粟美术馆展览日历]] — 2026 上海刘海粟美术馆展览日历  ·  🧠 1.000  ·  📊 4 次
+- 2026 上海刘海粟美术馆展览日历
+  - 春季（3–5月）
+  - 夏季（6–8月）
+  - 秋季（9–11月）
+  - 快速判断（当前日期 2026-06-04）
 
-### 5. [[brain-os-architecture]] — LLM-Brain OS 完整架构  ·  🧠 1.000  ·  📊 2 次
+### 5. [[brain-os-architecture]] — LLM-Brain OS 完整架构  ·  🧠 1.000  ·  📊 3 次
 - LLM-Brain OS 完整架构
   - 结论
   - 分层结构
@@ -59,7 +62,17 @@
   - 相关文档
   - 相关概念
 
-### 6. [[brain-commands-scope-parameter]] — brain-* 命令 `--scope` 参数约定  ·  🧠 1.000  ·  📊 1 次
+### 6. [[frontmatter-aliases-检索增强]] — Frontmatter aliases 字段：检索容错增强规范  ·  🧠 1.000  ·  📊 2 次
+- Frontmatter aliases 字段：检索容错增强规范
+  - 结论
+  - 标准格式
+  - 两个检索引擎的处理机制
+    - BM25（bm25_search.py）
+    - rg_body_search（rg_body_search.py）
+  - 适用边界
+  - 关联概念
+
+### 7. [[brain-commands-scope-parameter]] — brain-* 命令 `--scope` 参数约定  ·  🧠 1.000  ·  📊 1 次
 - brain-* 命令 `--scope` 参数约定
   - 结论
   - 参数规则
@@ -69,7 +82,13 @@
 - search 系：加 --scope project 收窄到当前项目
   - 关联
 
-### 7. [[wiki-log-format]] — wiki/log.md 查询日志规范  ·  🧠 0.977  ·  📊 2 次
+### 8. [[communication-language]] — dome 项目沟通语言规范  ·  🧠 1.000  ·  📊 1 次
+- dome 项目沟通语言规范
+  - 结论
+  - 边界
+  - 适用范围
+
+### 9. [[wiki-log-format]] — wiki/log.md 查询日志规范  ·  🧠 0.977  ·  📊 2 次
 - wiki/log.md 查询日志规范
   - 结论
   - 格式

@@ -635,3 +635,23 @@ def test_watcher_script_syntax():
         capture_output=True, text=True
     )
     assert result.returncode == 0, f"bash 语法错误：{result.stderr}"
+
+
+def test_old_hot_md_not_referenced_in_claude_md():
+    """CLAUDE.md 中不应再引用旧的 wiki/hot.md（单轨）。"""
+    claude_md = REPO_ROOT / "CLAUDE.md"
+    content = claude_md.read_text(encoding="utf-8")
+    assert "wiki/hot.md" not in content, \
+        "CLAUDE.md 仍引用旧的 wiki/hot.md，请替换为双轨引用"
+
+
+def test_no_project_notes_in_global_hot(tmp_path):
+    """global_hot.md 内容不得包含来自 project_exclusives 目录的笔记路径。"""
+    wiki_root = _make_wiki(tmp_path)
+    subprocess.run(
+        ["python3", str(SCRIPT), "--global", "--wiki-root", str(wiki_root / "wiki")],
+        capture_output=True
+    )
+    content = (wiki_root / "wiki" / "global_hot.md").read_text(encoding="utf-8")
+    assert "wiki/project_exclusives" not in content, \
+        "global_hot.md 不应包含来自 project_exclusives 目录的笔记路径"
