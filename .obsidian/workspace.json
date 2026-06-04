@@ -183,6 +183,7 @@
   },
   "active": "4294b0546648e2ee",
   "lastOpenFiles": [
+    "docs/superpowers/specs/hot优化方案.md",
     "wiki/global_concepts/2026-上海刘海粟美术馆展览日历.md",
     "wiki/project_exclusives/member/brain-os-architecture.md",
     "wiki/global_concepts/wiki-hot-watcher.md",
@@ -217,7 +218,6 @@
     "wiki/project_exclusives/member/全局记忆大脑.md",
     "wiki/projects/demo/concept-b.md",
     "wiki/concepts/concept-a.md",
-    "wiki/concepts/dummy.md",
-    "wiki/projects/demo/test-node.md"
+    "wiki/concepts/dummy.md"
   ]
 }
