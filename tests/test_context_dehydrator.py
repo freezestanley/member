@@ -63,3 +63,41 @@ def test_protect_restore_roundtrip():
     protected, cache = _protect_links(original)
     restored = _restore_links(protected, cache)
     assert restored == original
+
+
+# ─── Task 3: 代码块边界检测 ────────────────────────────────────────────────
+
+from context_dehydrator import _find_code_block_ranges
+
+
+def test_code_block_ranges_single():
+    lines = [
+        "普通行。",
+        "```python",
+        "def foo(): pass",
+        "```",
+        "结束。",
+    ]
+    ranges = _find_code_block_ranges(lines)
+    assert ranges == [(1, 3)]
+
+
+def test_code_block_ranges_multiple():
+    lines = [
+        "```bash",
+        "echo hi",
+        "```",
+        "间隔。",
+        "```python",
+        "x = 1",
+        "```",
+    ]
+    ranges = _find_code_block_ranges(lines)
+    assert ranges == [(0, 2), (4, 6)]
+
+
+def test_code_block_unclosed_treated_to_eof():
+    """未闭合的代码块应延伸到文件末尾，不崩溃"""
+    lines = ["```python", "def bar(): pass"]
+    ranges = _find_code_block_ranges(lines)
+    assert ranges == [(0, 1)]
