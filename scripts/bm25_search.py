@@ -54,15 +54,27 @@ def clean_and_tokenize(text):
 
 
 def collect_md_paths(search_dirs):
-    """遍历给定目录列表，返回所有 .md 文件的绝对路径。"""
+    """遍历给定目录列表，返回所有活跃 .md 文件的绝对路径。
+    跳过 status 为 archived / deprecated / incomplete 的文件。
+    """
     paths = []
     for d in search_dirs:
         if not os.path.exists(d):
             continue
         for root, _, files in os.walk(d):
             for f in files:
-                if f.endswith(".md"):
-                    paths.append(os.path.join(root, f))
+                if not f.endswith(".md"):
+                    continue
+                path = os.path.join(root, f)
+                try:
+                    with open(path, "r", encoding="utf-8") as fh:
+                        head = fh.read(512)
+                    status_match = re.search(r'^status:\s*(\S+)', head, re.MULTILINE)
+                    if status_match and status_match.group(1) in ("archived", "deprecated", "incomplete"):
+                        continue
+                except Exception:
+                    pass
+                paths.append(path)
     return paths
 
 

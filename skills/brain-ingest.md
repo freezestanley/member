@@ -36,30 +36,39 @@ allowed-tools:
    created_at: YYYY-MM-DD
    last_modified: YYYY-MM-DD
    project: <global或项目名>
+   aliases: []
    code_symbols: []
    initial_weight: 1.0
    current_weight: 1.0
    last_activated: YYYY-MM-DD
    access_count: 1
+   status: active
+   superseded_by: ""
    ---
    ```
 6. 正文先写结论，再写边界、细节、必要示例。相关概念尽量使用 `[[概念名]]`。
-7. 更新 `wiki/index.md`：
-   - 读取当前 `index.md` 全文
+7. 原子写入笔记文件：
+   - 先写临时文件 `<目标路径>.tmp`
+   - 用 `fcntl.LOCK_EX` 锁 `_inbox/.wiki_write.lock`
+   - `os.rename(<目标路径>.tmp, <目标路径>)`（POSIX 原子操作）
+   - 释放 `.wiki_write.lock`
+8. 原子更新 `wiki/index.md`：
+   - 用 `fcntl.LOCK_EX` 锁 `_inbox/.index.lock`
    - 在对应分区（`global_concepts` 或 `project_exclusives/<项目名>`）追加一行：
      `- [<笔记标题>](<相对路径>) — <一句话概括>`
    - 若该项目分区不存在，先新增分区标题再追加
-8. `wiki/hot.md` 由 `hot_watcher.sh` 后台进程自动刷新，无需手动写入。
+   - 释放 `.index.lock`
+9. `wiki/hot.md` 由 `hot_watcher.sh` 后台进程自动刷新，无需手动写入。
    - 步骤 7 写入新笔记后，watcher 检测到文件变化会自动调用 `hot_refresh.py`
    - 若 watcher 未运行，可手动执行一次：
      ```bash
      python3 /Users/za-stanlexu/Documents/member/member/scripts/hot_refresh.py
      ```
-9. 执行同步：
-   ```bash
-   bash /Users/za-stanlexu/Documents/member/member/scripts/vault_sync.sh
-   ```
-10. 汇报新增笔记路径、核心结论、同步结果。
+10. 执行同步：
+    ```bash
+    bash /Users/za-stanlexu/Documents/member/member/scripts/vault_sync.sh
+    ```
+11. 汇报新增笔记路径、核心结论、同步结果。
 
 ## 成功标准
 

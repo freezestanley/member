@@ -74,6 +74,8 @@ def collect_notes(scan_dir: Path) -> list[dict]:
         fm = parse_frontmatter(text)
         if not fm:
             continue
+        if fm.get("status") in ("archived", "deprecated", "incomplete"):
+            continue
         title = extract_title(text) or md_file.stem
         try:
             weight = float(fm.get("current_weight", fm.get("initial_weight", "1.0")))

@@ -11,14 +11,10 @@
             "id": "4294b0546648e2ee",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "wiki/project_exclusives/member/context-dehydration-pipeline.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "context-dehydration-pipeline"
+              "title": "新标签页"
             }
           }
         ]
@@ -181,10 +177,17 @@
       "bases:新建数据库": false
     }
   },
-  "active": "4294b0546648e2ee",
+  "active": "47276f943522073b",
   "lastOpenFiles": [
-    "wiki/project_exclusives/test-openclaw-sdk/sdk_diff_node_vs_browser.md",
+    "scripts/bm25_search.py.tmp.95682.2d5786f8bad6",
+    "archive/project_exclusives",
+    "archive/global_concepts",
+    "archive",
+    "docs/superpowers/specs/2026-06-05-archive-consistency-plan.md",
+    "docs/superpowers/specs/2026-06-05.md",
+    "wiki.zip",
     "wiki/project_exclusives/member/context-dehydration-pipeline.md",
+    "wiki/project_exclusives/test-openclaw-sdk/sdk_diff_node_vs_browser.md",
     "wiki/project_exclusives/test-openclaw-sdk/hot.md",
     "wiki/project_exclusives/dome/hot.md",
     "wiki/project_exclusives/member/hot.md",
@@ -211,13 +214,6 @@
     "skills/brain-query-rg.md",
     "skills/brain-search-rg.md",
     "skills/brain-query.md",
-    "skills/brain-search.md",
-    "skills",
-    "$WRITE_LOCK",
-    "scripts/__pycache__/bm25_search.cpython-314.pyc",
-    "scripts/__pycache__/rg_body_search.cpython-314.pyc",
-    "scripts/rg_body_search.py",
-    "docs/superpowers/plans/2026-06-03-brain-os-hardening.md",
-    "wiki/log.md"
+    "skills"
   ]
 }

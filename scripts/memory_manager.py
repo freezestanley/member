@@ -8,10 +8,14 @@ from datetime import datetime
 BRAIN_DIR = "/Users/za-stanlexu/Documents/member/member"
 GLOBAL_DIR = os.path.join(BRAIN_DIR, "wiki/global_concepts")
 PROJECT_DIR = os.path.join(BRAIN_DIR, "wiki/project_exclusives")
-ARCHIVE_DIR = os.path.join(BRAIN_DIR, "wiki/archive")
+ARCHIVE_DIR = os.path.join(BRAIN_DIR, "archive")  # 与wiki/同级
 
-HALF_LIFE_DAYS = 30           # 记忆半衰期（30天不访问，权重打对折）
-FORGET_THRESHOLD = 0.15       # 淘汰死线
+HALF_LIFE_DAYS = 30
+FORGET_THRESHOLD = 0.15
+
+# 自动生成文件，不补 frontmatter，不参与衰减
+_GENERATED_FILES = {"hot.md", "global_hot.md", "index.md", "log.md"}
+
 
 def calculate_weight(initial_w, last_active_str, access_count):
     try:
@@ -20,92 +24,171 @@ def calculate_weight(initial_w, last_active_str, access_count):
         return initial_w
     days_passed = max(0, (datetime.now() - last_active).days)
     decay_factor = math.pow(2, -(days_passed / HALF_LIFE_DAYS))
-    # 频率反向强化
-    safe_count = max(1, access_count)          # 防御 access_count=0 的极端情况
+    safe_count = max(1, access_count)
     frequency_bonus = 1.0 + 0.2 * math.log(safe_count)
     return round(initial_w * decay_factor * frequency_bonus, 3)
 
+
+def _build_frontmatter(path: str) -> str:
+    """根据路径推断 project，用文件 mtime 作日期，生成标准 frontmatter。"""
+    mtime = datetime.fromtimestamp(os.path.getmtime(path)).strftime("%Y-%m-%d")
+    rel = os.path.relpath(path, os.path.join(BRAIN_DIR, "wiki"))
+    parts = rel.replace("\\", "/").split("/")
+    if parts[0] == "global_concepts":
+        project = "global"
+    elif parts[0] == "project_exclusives" and len(parts) >= 2:
+        project = parts[1]
+    else:
+        project = "global"
+    return (
+        f"---\n"
+        f"type: concept\n"
+        f"created_at: {mtime}\n"
+        f"last_modified: {mtime}\n"
+        f"project: {project}\n"
+        f"aliases: []\n"
+        f"code_symbols: []\n"
+        f"initial_weight: 1.0\n"
+        f"current_weight: 1.0\n"
+        f"last_activated: {mtime}\n"
+        f"access_count: 1\n"
+        f"status: active\n"
+        f"superseded_by: \"\"\n"
+        f"---\n"
+    )
+
+
+def _ensure_status_fields(content: str) -> tuple[str, bool]:
+    """确保 frontmatter 包含 status 和 superseded_by，缺什么补什么。返回(新内容, 是否修改)。"""
+    fm_match = re.match(r"^(---\s*\n)(.*?)(\n---\s*\n)", content, re.DOTALL)
+    if not fm_match:
+        return content, False
+    fm_text = fm_match.group(2)
+    changed = False
+    if not re.search(r'^status:', fm_text, re.MULTILINE):
+        fm_text += "\nstatus: active"
+        changed = True
+    if not re.search(r'^superseded_by:', fm_text, re.MULTILINE):
+        fm_text += "\nsuperseded_by: \"\""
+        changed = True
+    if not changed:
+        return content, False
+    new_content = fm_match.group(1) + fm_text + fm_match.group(3) + content[fm_match.end():]
+    return new_content, True
+
+
 def archive_with_backlink_update(note_path: str, archive_dir: str, scan_root: str):
     """
-    将 note_path 物理移入 archive_dir，并在 scan_root 全库中
-    将所有 [[<note_stem>]] 替换为 ~~[[<note_stem>]]~~（已归档标注）。
-    顺序：先全库替换双链，再移动文件（顺序不能反：移动后路径就找不到了）。
+    将 note_path 物理移入 archive/，保留相对 wiki/ 的完整子目录层级。
+    移动前写 status: archived 到原文件 frontmatter。
+    双链不改写（archive/ 在 Obsidian vault 内，[[stem]] 自动解析，零死链）。
+    scan_root 即 wiki 根目录，relpath 基于此计算归档子路径。
     """
-    note_stem = os.path.splitext(os.path.basename(note_path))[0]
-    old_link = f"[[{note_stem}]]"
-    new_link = f"~~[[{note_stem}]]~~"
+    wiki_root = scan_root
+    rel_path = os.path.relpath(note_path, wiki_root)
+    archive_path = os.path.join(archive_dir, rel_path)
+    os.makedirs(os.path.dirname(archive_path), exist_ok=True)
 
-    for root, _, files in os.walk(scan_root):
-        for fname in files:
-            if not fname.endswith(".md"):
-                continue
-            fp = os.path.join(root, fname)
-            if fp == note_path:
-                continue  # 跳过被归档文件自身
-            try:
-                with open(fp, "r", encoding="utf-8") as f:
-                    content = f.read()
-                if old_link in content:
-                    updated = content.replace(old_link, new_link)
-                    with open(fp, "w", encoding="utf-8") as f:
-                        f.write(updated)
-                    print(f"   ↳ [断链修复] {fname}: {old_link} → {new_link}")
-            except Exception as e:
-                print(f"   ↳ [断链修复失败] {fname}: {e}")
+    try:
+        with open(note_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        content = re.sub(r'^status:\s*\S+', 'status: archived', content, flags=re.MULTILINE)
+        if not re.search(r'^status:', content, re.MULTILINE):
+            content, _ = _ensure_status_fields(content)
+            content = re.sub(r'^status:\s*\S+', 'status: archived', content, flags=re.MULTILINE)
+        with open(note_path, "w", encoding="utf-8") as f:
+            f.write(content)
+    except Exception as e:
+        print(f"   ↳ [归档status写入失败] {note_path}: {e}")
 
-    if not os.path.exists(archive_dir):
-        os.makedirs(archive_dir)
-    os.rename(note_path, os.path.join(archive_dir, os.path.basename(note_path)))
+    os.rename(note_path, archive_path)
+    print(f"   ↳ [归档] {rel_path} → archive/{rel_path}")
 
 
 def scan_and_clean():
     target_dirs = [GLOBAL_DIR, PROJECT_DIR]
     for target_dir in target_dirs:
-        if not os.path.exists(target_dir): continue
+        if not os.path.exists(target_dir):
+            continue
         for root, _, files in os.walk(target_dir):
             for file in files:
-                if not file.endswith(".md"): continue
+                if not file.endswith(".md"):
+                    continue
+                if file in _GENERATED_FILES:
+                    continue
+
                 path = os.path.join(root, file)
-                
-                with open(path, "r", encoding="utf-8") as f: content = f.read()
+
+                # 孤儿 .tmp 检测：同名 .tmp 存在说明写入未完成
+                tmp_path = path + ".tmp"
+                if os.path.exists(tmp_path):
+                    try:
+                        with open(path, "r", encoding="utf-8") as f:
+                            content = f.read()
+                        content = re.sub(r'^status:\s*\S+', 'status: incomplete', content, flags=re.MULTILINE)
+                        with open(path, "w", encoding="utf-8") as f:
+                            f.write(content)
+                        print(f"⚠️ [未完成事务] {file} 发现孤儿 .tmp，已标记 status: incomplete")
+                    except Exception as e:
+                        print(f"   ↳ [incomplete标记失败] {file}: {e}")
+                    continue
+
+                with open(path, "r", encoding="utf-8") as f:
+                    content = f.read()
+
                 fm_match = re.match(r"^---(.*?)---", content, re.DOTALL)
-                if not fm_match: continue
+
+                # 无 frontmatter：自动补全
+                if not fm_match:
+                    new_content = _build_frontmatter(path) + content
+                    with open(path, "w", encoding="utf-8") as f:
+                        f.write(new_content)
+                    print(f"✅ [frontmatter补全] {file}")
+                    fm_match = re.match(r"^---(.*?)---", new_content, re.DOTALL)
+                    content = new_content
+
                 fm_text = fm_match.group(1)
-                
+
+                # 确保 status/superseded_by 字段存在
+                content, patched = _ensure_status_fields(content)
+                if patched:
+                    with open(path, "w", encoding="utf-8") as f:
+                        f.write(content)
+                    fm_match = re.match(r"^---(.*?)---", content, re.DOTALL)
+                    fm_text = fm_match.group(1)
+
                 try:
                     init_w = float(re.search(r"initial_weight:\s*([\d\.]+)", fm_text).group(1))
                     last_act = re.search(r"last_activated:\s*([\d\-]+)", fm_text).group(1)
                     count = int(re.search(r"access_count:\s*(\d+)", fm_text).group(1))
                 except (AttributeError, ValueError):
-                    continue # 格式不合规或未初始化，跳过
-                
+                    continue
+
                 new_w = calculate_weight(init_w, last_act, count)
                 updated_fm = re.sub(r"current_weight:\s*[\d\.]+", f"current_weight: {new_w}", fm_text)
                 new_content = content.replace(fm_text, updated_fm)
-                
+
                 if new_w < FORGET_THRESHOLD:
-                    print(f"⚠️ [冷冻归档] 检测到过时边缘知识: {file} (当前权重: {new_w}) -> 物理移入冷冻区。")
+                    print(f"⚠️ [冷冻归档] {file} (权重: {new_w}) -> 移入 archive/")
                     archive_with_backlink_update(path, ARCHIVE_DIR, os.path.join(BRAIN_DIR, "wiki"))
                 else:
-                    with open(path, "w", encoding="utf-8") as f: f.write(new_content)
+                    with open(path, "w", encoding="utf-8") as f:
+                        f.write(new_content)
+
 
 def render_global_indices():
-    """重写 wiki/index.md，去除时间戳以避免 Git commit churn。
-    hot.md 由 hot_refresh.py 独立维护（大纲树格式），此函数不再写入。
-    """
+    """重写 wiki/index.md，去除时间戳以避免 Git commit churn。"""
     print("🎨 [Engine] 刷新中央目录索引 wiki/index.md ...")
 
     global_notes = []
     project_notes_map = {}
 
-    # 1. 扫描公共通用概念区
     if os.path.exists(GLOBAL_DIR):
         for _, _, files in os.walk(GLOBAL_DIR):
             for file in files:
-                if file.endswith(".md"):
+                if file.endswith(".md") and file not in _GENERATED_FILES:
                     global_notes.append(file.replace(".md", ""))
 
-    # 2. 扫描项目独占概念区
     if os.path.exists(PROJECT_DIR):
         for item in os.listdir(PROJECT_DIR):
             item_path = os.path.join(PROJECT_DIR, item)
@@ -113,10 +196,9 @@ def render_global_indices():
                 project_notes_map[item] = []
                 for _, _, files in os.walk(item_path):
                     for file in files:
-                        if file.endswith(".md"):
+                        if file.endswith(".md") and file not in _GENERATED_FILES:
                             project_notes_map[item].append(file.replace(".md", ""))
 
-    # 全量重写 wiki/index.md（无时间戳，内容不变则 git diff 为空）
     index_path = os.path.join(BRAIN_DIR, "wiki/index.md")
     with open(index_path, "w", encoding="utf-8") as f:
         f.write("# 🗺️ Central Index ── 中央知识网络全局全景主索引\n\n")
@@ -136,6 +218,7 @@ def render_global_indices():
                         f.write(f"- [[{note}]]\n")
         else:
             f.write("- *(暂无隔离项目资产)*\n")
+
 
 if __name__ == "__main__":
     scan_and_clean()

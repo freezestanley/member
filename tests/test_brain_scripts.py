@@ -33,80 +33,83 @@ import subprocess, os, time
 import pathlib
 
 
-def test_archive_updates_backlinks(tmp_path):
-    """归档笔记时，其他笔记中的 [[xxx]] 双链应被标注为已归档"""
-    concepts = tmp_path / "wiki" / "global_concepts"
-    archive = tmp_path / "wiki" / "archive"
+def test_archive_preserves_path_and_status(tmp_path):
+    """归档笔记时：原路径文件消失，archive/下出现镜像路径，frontmatter写入status:archived，双链不改写"""
+    wiki_dir = tmp_path / "wiki"
+    concepts = wiki_dir / "global_concepts"
+    archive = tmp_path / "archive"
     concepts.mkdir(parents=True)
     archive.mkdir(parents=True)
 
-    # 即将被归档的笔记
     target = concepts / "old-concept.md"
     target.write_text(
         "---\ntype: concept\ninitial_weight: 1.0\ncurrent_weight: 0.10\n"
-        "last_activated: 2025-01-01\naccess_count: 1\n---\n# 旧概念\n内容。\n"
+        "last_activated: 2025-01-01\naccess_count: 1\nstatus: active\nsuperseded_by: \"\"\n"
+        "---\n# 旧概念\n内容。\n"
     )
 
-    # 引用了旧笔记的活跃笔记
     active = concepts / "active-concept.md"
     active.write_text(
         "---\ntype: concept\ninitial_weight: 1.0\ncurrent_weight: 1.0\n"
-        "last_activated: 2026-06-03\naccess_count: 5\n---\n"
-        "# 活跃概念\n参见 [[old-concept]] 中的定义。\n"
+        "last_activated: 2026-06-03\naccess_count: 5\nstatus: active\nsuperseded_by: \"\"\n"
+        "---\n# 活跃概念\n参见 [[old-concept]] 中的定义。\n"
     )
 
     sys.path.insert(0, "scripts")
     from memory_manager import archive_with_backlink_update
-    archive_with_backlink_update(str(target), str(archive), str(concepts))
+    archive_with_backlink_update(str(target), str(archive), str(wiki_dir))
 
-    # old-concept.md 已移入 archive/
+    # 原路径消失，archive/下路径镜像正确
     assert not target.exists()
-    assert (archive / "old-concept.md").exists()
+    assert (archive / "global_concepts" / "old-concept.md").exists()
 
-    # active-concept.md 中的双链已被标注
-    updated = active.read_text()
-    assert "~~[[old-concept]]~~" in updated, f"双链未更新：{updated}"
-    # 原始双链不再出现（排除被 ~~ 包围的情况）
-    clean = updated.replace("~~[[old-concept]]~~", "")
-    assert "[[old-concept]]" not in clean, "原始双链仍存在，未被完整替换"
+    # 归档文件 frontmatter 写入 status: archived
+    archived_content = (archive / "global_concepts" / "old-concept.md").read_text()
+    assert "status: archived" in archived_content
+
+    # 双链不改写（Obsidian vault内零死链）
+    unchanged = active.read_text()
+    assert "[[old-concept]]" in unchanged, "双链不应被改写"
+    assert "~~" not in unchanged, "不应出现删除线标注"
 
 
 def test_archive_updates_backlinks_cross_dir(tmp_path):
-    """归档 global_concepts 中的笔记时，project_exclusives 中的双链也应被更新"""
-    # 构造双目录结构
-    global_dir = tmp_path / "wiki" / "global_concepts"
-    project_dir = tmp_path / "wiki" / "project_exclusives" / "myproj"
-    archive_dir = tmp_path / "wiki" / "archive"
+    """归档 global_concepts 中的笔记时，保留路径层级，双链保持不变"""
     wiki_dir = tmp_path / "wiki"
+    global_dir = wiki_dir / "global_concepts"
+    project_dir = wiki_dir / "project_exclusives" / "myproj"
+    archive_dir = tmp_path / "archive"
     global_dir.mkdir(parents=True)
     project_dir.mkdir(parents=True)
     archive_dir.mkdir(parents=True)
 
-    # 即将被归档的笔记（在 global_concepts/）
     target = global_dir / "shared-concept.md"
     target.write_text(
-        "---\ntype: concept\ncurrent_weight: 0.10\naccess_count: 1\n---\n# 共享概念\n内容。\n"
+        "---\ntype: concept\ncurrent_weight: 0.10\naccess_count: 1\nstatus: active\nsuperseded_by: \"\"\n"
+        "---\n# 共享概念\n内容。\n"
     )
 
-    # 引用者在 project_exclusives/（跨目录）
     proj_note = project_dir / "project-note.md"
     proj_note.write_text(
-        "---\ntype: concept\ncurrent_weight: 1.0\naccess_count: 3\n---\n"
-        "# 项目笔记\n本项目基于 [[shared-concept]] 实现。\n"
+        "---\ntype: concept\ncurrent_weight: 1.0\naccess_count: 3\nstatus: active\nsuperseded_by: \"\"\n"
+        "---\n# 项目笔记\n本项目基于 [[shared-concept]] 实现。\n"
     )
 
     from memory_manager import archive_with_backlink_update
     archive_with_backlink_update(str(target), str(archive_dir), str(wiki_dir))
 
-    # 断言：shared-concept.md 已移入 archive/
+    # 原路径消失，archive/下路径镜像正确
     assert not target.exists()
-    assert (archive_dir / "shared-concept.md").exists()
+    assert (archive_dir / "global_concepts" / "shared-concept.md").exists()
 
-    # 断言：跨目录的 project_exclusives 中双链已被更新
-    updated = proj_note.read_text()
-    assert "~~[[shared-concept]]~~" in updated, f"跨目录双链未更新：{updated}"
-    clean = updated.replace("~~[[shared-concept]]~~", "")
-    assert "[[shared-concept]]" not in clean, "原始双链仍存在"
+    # 归档文件写入 status: archived
+    archived_content = (archive_dir / "global_concepts" / "shared-concept.md").read_text()
+    assert "status: archived" in archived_content
+
+    # 跨目录双链保持不变（不改写）
+    unchanged = proj_note.read_text()
+    assert "[[shared-concept]]" in unchanged
+    assert "~~" not in unchanged
 
 
 def test_vault_sync_skips_when_lock_exists(tmp_path):
