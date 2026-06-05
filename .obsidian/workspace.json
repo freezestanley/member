@@ -4,21 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "276c8f96828363de",
+        "id": "da80e8268b06f45b",
         "type": "tabs",
         "children": [
           {
-            "id": "1f1ac289d620ebac",
+            "id": "c44984347a4c9464",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "skills/brain-search-rg.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "brain-search-rg"
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "关系图谱"
             }
           }
         ]
@@ -181,43 +177,43 @@
       "bases:新建数据库": false
     }
   },
-  "active": "1f1ac289d620ebac",
+  "active": "c44984347a4c9464",
   "lastOpenFiles": [
-    "wiki/global_hot.md",
+    "wiki/project_exclusives/test/hot.md",
+    "wiki/project_exclusives/test/frontend-tech-stack.md",
+    "wiki/project_exclusives/test/frontend-tech-stack.md.tmp",
+    "wiki/project_exclusives/test",
     "wiki/global_concepts/周杰伦录音室专辑歌单.md",
-    "wiki/global_concepts/周杰伦录音室专辑歌单.tmp",
-    "wiki/log.md",
-    "wiki/project_exclusives/member/memory-weight-decay.md",
-    "欢迎.md",
-    "双链.md",
-    "wiki/index.md",
-    "wiki/project_exclusives/member/hot-memory-dual-track.md",
-    "docs/superpowers/specs/LLM-BRAIN-OS-V2.2.md",
-    "wiki/project_exclusives/member/context-dehydrator.md",
     "wiki/project_exclusives/member/bm25-memory-retrieval-pipeline.md",
-    "wiki/project_exclusives/member/llm-brain-os-architecture.md",
+    "CodeGraph_Vault/rg_body_search.py.md",
+    "CodeGraph_Vault/未命名.md",
+    "CodeGraph_Vault/utils.py.md",
+    "CodeGraph_Vault/utils.md",
+    "CodeGraph_Vault/trim_to_limit.md",
+    "CodeGraph_Vault/time.md",
+    "CodeGraph_Vault/test_watcher_script_syntax.md",
+    "CodeGraph_Vault/test_vault_sync_skips_when_lock_exists.md",
+    "CodeGraph_Vault/test_rg_body_search_hits_body.md",
+    "CodeGraph_Vault/test_rg_body_search_hits_alias.md",
+    "CodeGraph_Vault/test_rg_body_search_excludes_frontmatter.md",
+    "CodeGraph_Vault/test_rg_body_search_alias_with_comment.md",
+    "CodeGraph_Vault/test_assemble_second_oversized_doc_appends_warning.md",
+    "CodeGraph_Vault/test_restore_links_recovers_wikilinks.md",
+    "CodeGraph_Vault/test_render_hot_outline_format.md",
+    "CodeGraph_Vault/test_render_hot_empty_outline.md",
+    "CodeGraph_Vault/test_protect_restore_roundtrip.md",
+    "CodeGraph_Vault/test_protect_links_replaces_wikilinks.md",
+    "CodeGraph_Vault/test_project_route_writes_project_hot.md",
+    "CodeGraph_Vault/test_precise_mode_preserves_wikilinks.md",
+    "CodeGraph_Vault/test_precise_mode_extracts_hit_section.md",
+    "CodeGraph_Vault/test_precise_mode_empty_input.md",
+    "CodeGraph_Vault",
+    "wiki/global_concepts/周杰伦录音室专辑歌单.tmp",
     "wiki/project_exclusives/member",
     "scripts/bm25_search.py.tmp.95682.2d5786f8bad6",
     "archive/project_exclusives",
     "archive/global_concepts",
     "archive",
-    "docs/superpowers/specs/2026-06-05-archive-consistency-plan.md",
-    "docs/superpowers/specs/2026-06-05.md",
-    "wiki.zip",
-    "wiki/project_exclusives/member/context-dehydration-pipeline.md",
-    "wiki/project_exclusives/test-openclaw-sdk/sdk_diff_node_vs_browser.md",
-    "wiki/project_exclusives/test-openclaw-sdk/hot.md",
-    "wiki/project_exclusives/dome/hot.md",
-    "wiki/project_exclusives/member/hot.md",
-    "docs/superpowers/plans/2026-06-04-hot-dual-track-routing.md",
-    "docs/superpowers/specs/hot优化方案.md",
-    "wiki/global_concepts/2026-上海刘海粟美术馆展览日历.md",
-    "wiki/project_exclusives/member/brain-os-architecture.md",
-    "wiki/global_concepts/wiki-hot-watcher.md",
-    "wiki/project_exclusives/dome/communication-language.md",
-    "wiki/project_exclusives/dome",
-    "wiki/global_concepts/wiki-log-format.md",
-    "scripts/__pycache__/utils.cpython-313.pyc",
-    "scripts/__pycache__/utils.cpython-314.pyc"
+    "wiki.zip"
   ]
 }

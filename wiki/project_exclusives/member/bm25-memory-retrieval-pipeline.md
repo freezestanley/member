@@ -8,7 +8,7 @@ code_symbols: [bm25_search.py, build_or_load_cache, clean_and_tokenize, collect_
 initial_weight: 1.0
 current_weight: 1.0
 last_activated: 2026-06-05
-access_count: 2
+access_count: 3
 status: active
 superseded_by: ""
 ---

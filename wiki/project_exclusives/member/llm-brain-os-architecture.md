@@ -8,7 +8,7 @@ code_symbols: [memory_manager.py, bm25_search.py, hot_refresh.py, context_dehydr
 initial_weight: 1.0
 current_weight: 1.0
 last_activated: 2026-06-05
-access_count: 1
+access_count: 2
 status: active
 superseded_by: ""
 ---
