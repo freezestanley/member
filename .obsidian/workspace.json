@@ -179,6 +179,14 @@
   },
   "active": "47276f943522073b",
   "lastOpenFiles": [
+    "wiki/index.md",
+    "wiki/project_exclusives/member/hot-memory-dual-track.md",
+    "wiki/project_exclusives/member/memory-weight-decay.md",
+    "docs/superpowers/specs/LLM-BRAIN-OS-V2.2.md",
+    "wiki/project_exclusives/member/context-dehydrator.md",
+    "wiki/project_exclusives/member/bm25-memory-retrieval-pipeline.md",
+    "wiki/project_exclusives/member/llm-brain-os-architecture.md",
+    "wiki/project_exclusives/member",
     "scripts/bm25_search.py.tmp.95682.2d5786f8bad6",
     "archive/project_exclusives",
     "archive/global_concepts",
@@ -205,15 +213,7 @@
     "wiki/hot.md",
     "scripts/__pycache__/utils.cpython-313.pyc",
     "wiki/global_concepts/team-coding-standards.md",
-    "wiki/project_exclusives/member",
-    "docs/superpowers/specs/2026-06-03-llm-brain-os-design.md",
     "scripts/__pycache__/utils.cpython-314.pyc",
-    "scripts/utils.py",
-    "skills/brain-consolidate.md",
-    "skills/brain-ingest.md",
-    "skills/brain-query-rg.md",
-    "skills/brain-search-rg.md",
-    "skills/brain-query.md",
-    "skills"
+    "scripts/utils.py"
   ]
 }
