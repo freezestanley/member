@@ -8,7 +8,7 @@ code_symbols: [memory_manager.py, calculate_weight, scan_and_clean, archive_with
 initial_weight: 1.0
 current_weight: 1.0
 last_activated: 2026-06-05
-access_count: 1
+access_count: 2
 status: active
 superseded_by: ""
 ---

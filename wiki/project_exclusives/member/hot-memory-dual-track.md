@@ -8,7 +8,7 @@ code_symbols: [hot_refresh.py, hot_watcher.sh, collect_notes, render_hot, atomic
 initial_weight: 1.0
 current_weight: 1.0
 last_activated: 2026-06-05
-access_count: 1
+access_count: 2
 status: active
 superseded_by: ""
 ---

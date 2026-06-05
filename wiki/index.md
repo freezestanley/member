@@ -11,3 +11,6 @@
 - [[hot-memory-dual-track]]
 - [[llm-brain-os-architecture]]
 - [[memory-weight-decay]]
+
+## global_concepts
+- [周杰伦录音室专辑歌单](global_concepts/周杰伦录音室专辑歌单.md) — 周杰伦2000—2022年全部15张录音室专辑及曲目列表
