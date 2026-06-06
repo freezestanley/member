@@ -1,0 +1,28 @@
+filters:
+  and:
+    - 'file.inFolder("wiki")'
+    - 'status == "active"'
+properties:
+  file.name:
+    displayName: Note
+  project:
+    displayName: Project
+  category:
+    displayName: Category
+  current_weight:
+    displayName: Weight
+  access_count:
+    displayName: Access
+  last_activated:
+    displayName: Last activated
+views:
+  - type: table
+    name: Active memory
+    limit: 100
+    order:
+      - file.name
+      - project
+      - category
+      - current_weight
+      - access_count
+      - last_activated
