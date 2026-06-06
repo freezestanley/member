@@ -6,6 +6,7 @@
 ## 🚜 二、 项目特异性独占研发逻辑与业务概念
 
 ### 📂 项目仓库：`member`
+- [[scripts-config-central]] — scripts/config.py：脚本层公共常量中心，统一管理路径/枚举/阈值
 - [[bm25-memory-retrieval-pipeline]]
 - [[context-dehydrator]]
 - [[hot-memory-dual-track]]

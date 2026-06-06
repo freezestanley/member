@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "wiki/project_exclusives/member/brain-commands-reference.md",
+                "file": "wiki/project_exclusives/member/scripts-config-central.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "brain-commands-reference"
+              "title": "scripts-config-central"
             }
           }
         ]
@@ -185,6 +185,9 @@
   },
   "active": "57969b081412bd1b",
   "lastOpenFiles": [
+    "canvases/LLM-Brain-OS.canvas",
+    "wiki/project_exclusives/member/scripts-config-central.md",
+    "wiki/project_exclusives/member/brain-commands-reference.md",
     "scripts/__pycache__/obsidian_audit.cpython-313.pyc",
     "scripts/__pycache__/log_append.cpython-313.pyc",
     "scripts/__pycache__/hot_refresh.cpython-313.pyc",
@@ -196,10 +199,7 @@
     "scripts/config.py",
     "wiki/project_exclusives/member/bm25-memory-retrieval-pipeline.md",
     "wiki/project_exclusives/atest/global-status-enum.md",
-    "wiki/project_exclusives/member/brain-commands-reference.md",
     "wiki/project_exclusives/member/brain-commands-reference.md.tmp",
-    "canvases/LLM-Brain-OS.canvas",
-    "wiki/project_exclusives/atest",
     "dashboards/归档候选.md",
     "dashboards/低权重待处理.md",
     "dashboards/项目 member 记忆.md",
@@ -220,7 +220,6 @@
     "templates/decision.md",
     "templates/concept-project.md",
     "templates/concept-global.md",
-    "docs/obsidian-first-memory-vault-manual.md",
-    "dashboards/最近激活.md"
+    "docs/obsidian-first-memory-vault-manual.md"
   ]
 }
