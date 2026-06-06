@@ -1,8 +1,25 @@
 # scripts/memory_manager.py
+import argparse
+import json
 import os
 import re
 import math
-from datetime import datetime
+from datetime import date, datetime
+
+from frontmatter_utils import (
+    atomic_write_text,
+    normalize_status,
+    parse_frontmatter_text,
+    split_frontmatter,
+    upsert_frontmatter_fields,
+)
+from weight_engine import (
+    WeightEngine,
+    build_metadata,
+    clamp_float,
+    clamp_int,
+    load_config,
+)
 
 # 🚨 锁死中央知识库的绝对路径
 BRAIN_DIR = "/Users/za-stanlexu/Documents/member/member"
@@ -54,6 +71,13 @@ def _build_frontmatter(path: str) -> str:
         f"access_count: 1\n"
         f"status: active\n"
         f"superseded_by: \"\"\n"
+        f"weight_schema_version: 2\n"
+        f"category: general\n"
+        f"importance: 1\n"
+        f"ewma_access: 0.0\n"
+        f"last_boost: 1.0\n"
+        f"last_boosted_at: \"\"\n"
+        f"last_weight_migrated_at: {mtime}\n"
         f"---\n"
     )
 
@@ -77,7 +101,44 @@ def _ensure_status_fields(content: str) -> tuple[str, bool]:
     return new_content, True
 
 
-def archive_with_backlink_update(note_path: str, archive_dir: str, scan_root: str):
+def init_ewma_from_access_count(access_count: int, config: dict) -> float:
+    historical_signal = max(0.0, float(access_count) - 1.0)
+    return round(min(config["ewma_migration_cap"], historical_signal), 3)
+
+
+def migrate_weight_fields(fm: dict[str, str], today: date, config: dict) -> tuple[dict[str, str], bool]:
+    version = str(fm.get("weight_schema_version", "")).strip().strip("\"'")
+    was_migrated = version != "2"
+    access_count = clamp_int(fm.get("access_count", "1"), 0, 1_000_000_000)
+    ewma = fm.get("ewma_access")
+    if ewma is None or was_migrated:
+        ewma = str(init_ewma_from_access_count(access_count, config))
+
+    updates = {
+        "weight_schema_version": "2",
+        "category": fm.get("category", "general") or "general",
+        "importance": str(clamp_int(fm.get("importance", "1"), 1, 5)),
+        "ewma_access": str(clamp_float(ewma, 0.0, config["ewma_max"])),
+        "last_boost": str(clamp_float(fm.get("last_boost", "1.0"), 1.0, config["boost_values"]["high"])),
+        "last_boosted_at": fm.get("last_boosted_at", '""') or '""',
+        "last_weight_migrated_at": fm.get("last_weight_migrated_at", today.isoformat()) or today.isoformat(),
+    }
+    if was_migrated:
+        updates["last_weight_migrated_at"] = today.isoformat()
+    return updates, was_migrated
+
+
+def calculate_weight_v2(fm: dict[str, str], today: date, config: dict) -> float:
+    meta = build_metadata(fm, today, config)
+    return WeightEngine(config).compute(meta)
+
+
+def archive_with_backlink_update(
+    note_path: str,
+    archive_dir: str,
+    scan_root: str,
+    content: str | None = None,
+):
     """
     将 note_path 物理移入 archive/，保留相对 wiki/ 的完整子目录层级。
     移动前写 status: archived 到原文件 frontmatter。
@@ -87,25 +148,42 @@ def archive_with_backlink_update(note_path: str, archive_dir: str, scan_root: st
     wiki_root = scan_root
     rel_path = os.path.relpath(note_path, wiki_root)
     archive_path = os.path.join(archive_dir, rel_path)
-    os.makedirs(os.path.dirname(archive_path), exist_ok=True)
+    if os.path.exists(archive_path):
+        raise FileExistsError(archive_path)
 
-    try:
+    os.makedirs(os.path.dirname(archive_path), exist_ok=True)
+    if content is None:
         with open(note_path, "r", encoding="utf-8") as f:
             content = f.read()
-        content = re.sub(r'^status:\s*\S+', 'status: archived', content, flags=re.MULTILINE)
-        if not re.search(r'^status:', content, re.MULTILINE):
-            content, _ = _ensure_status_fields(content)
-            content = re.sub(r'^status:\s*\S+', 'status: archived', content, flags=re.MULTILINE)
-        with open(note_path, "w", encoding="utf-8") as f:
-            f.write(content)
-    except Exception as e:
-        print(f"   ↳ [归档status写入失败] {note_path}: {e}")
 
-    os.rename(note_path, archive_path)
+    content, _ = _ensure_status_fields(content)
+    content = upsert_frontmatter_fields(content, {"status": "archived"})
+    atomic_write_text(note_path, content, note_path + ".lock")
+    os.replace(note_path, archive_path)
     print(f"   ↳ [归档] {rel_path} → archive/{rel_path}")
 
 
-def scan_and_clean():
+def _empty_summary() -> dict:
+    return {
+        "scanned": 0,
+        "migrated": 0,
+        "updated": 0,
+        "archived": 0,
+        "archive_conflicts": 0,
+        "archive_candidates_after_grace": 0,
+        "skipped": 0,
+        "incomplete": 0,
+    }
+
+
+def scan_and_clean(
+    config_path: str | None = None,
+    today: date | None = None,
+    dry_run: bool = False,
+) -> dict:
+    config = load_config(config_path)
+    today = today or date.today()
+    summary = _empty_summary()
     target_dirs = [GLOBAL_DIR, PROJECT_DIR]
     for target_dir in target_dirs:
         if not os.path.exists(target_dir):
@@ -118,16 +196,20 @@ def scan_and_clean():
                     continue
 
                 path = os.path.join(root, file)
+                summary["scanned"] += 1
 
                 # 孤儿 .tmp 检测：同名 .tmp 存在说明写入未完成
                 tmp_path = path + ".tmp"
                 if os.path.exists(tmp_path):
+                    summary["incomplete"] += 1
+                    if dry_run:
+                        continue
                     try:
                         with open(path, "r", encoding="utf-8") as f:
                             content = f.read()
-                        content = re.sub(r'^status:\s*\S+', 'status: incomplete', content, flags=re.MULTILINE)
-                        with open(path, "w", encoding="utf-8") as f:
-                            f.write(content)
+                        content, _ = _ensure_status_fields(content)
+                        content = upsert_frontmatter_fields(content, {"status": "incomplete"})
+                        atomic_write_text(path, content, path + ".lock")
                         print(f"⚠️ [未完成事务] {file} 发现孤儿 .tmp，已标记 status: incomplete")
                     except Exception as e:
                         print(f"   ↳ [incomplete标记失败] {file}: {e}")
@@ -136,44 +218,73 @@ def scan_and_clean():
                 with open(path, "r", encoding="utf-8") as f:
                     content = f.read()
 
-                fm_match = re.match(r"^---(.*?)---", content, re.DOTALL)
-
                 # 无 frontmatter：自动补全
-                if not fm_match:
+                try:
+                    _, fm_text, _ = split_frontmatter(content)
+                except ValueError:
+                    summary["updated"] += 1
                     new_content = _build_frontmatter(path) + content
-                    with open(path, "w", encoding="utf-8") as f:
-                        f.write(new_content)
-                    print(f"✅ [frontmatter补全] {file}")
-                    fm_match = re.match(r"^---(.*?)---", new_content, re.DOTALL)
-                    content = new_content
-
-                fm_text = fm_match.group(1)
+                    if not dry_run:
+                        atomic_write_text(path, new_content, path + ".lock")
+                        print(f"✅ [frontmatter补全] {file}")
+                    continue
 
                 # 确保 status/superseded_by 字段存在
                 content, patched = _ensure_status_fields(content)
                 if patched:
-                    with open(path, "w", encoding="utf-8") as f:
-                        f.write(content)
-                    fm_match = re.match(r"^---(.*?)---", content, re.DOTALL)
-                    fm_text = fm_match.group(1)
-
+                    summary["updated"] += 1
+                    if not dry_run:
+                        atomic_write_text(path, content, path + ".lock")
                 try:
-                    init_w = float(re.search(r"initial_weight:\s*([\d\.]+)", fm_text).group(1))
-                    last_act = re.search(r"last_activated:\s*([\d\-]+)", fm_text).group(1)
-                    count = int(re.search(r"access_count:\s*(\d+)", fm_text).group(1))
-                except (AttributeError, ValueError):
+                    _, fm_text, _ = split_frontmatter(content)
+                except ValueError:
+                    summary["skipped"] += 1
                     continue
 
-                new_w = calculate_weight(init_w, last_act, count)
-                updated_fm = re.sub(r"current_weight:\s*[\d\.]+", f"current_weight: {new_w}", fm_text)
-                new_content = content.replace(fm_text, updated_fm)
+                fm = parse_frontmatter_text(fm_text)
+                status = normalize_status(fm.get("status"))
+                if status in {"archived", "deprecated", "incomplete"}:
+                    summary["skipped"] += 1
+                    continue
 
-                if new_w < FORGET_THRESHOLD:
-                    print(f"⚠️ [冷冻归档] {file} (权重: {new_w}) -> 移入 archive/")
-                    archive_with_backlink_update(path, ARCHIVE_DIR, os.path.join(BRAIN_DIR, "wiki"))
+                migration_updates, was_migrated = migrate_weight_fields(fm, today, config)
+                if was_migrated:
+                    summary["migrated"] += 1
+                migrated_fm = {**fm, **migration_updates}
+                new_w = calculate_weight_v2(migrated_fm, today, config)
+                updates = {**migration_updates, "current_weight": str(new_w)}
+                new_content = upsert_frontmatter_fields(content, updates)
+                changed = new_content != content
+
+                if was_migrated:
+                    if new_w < config["forget_threshold"]:
+                        summary["archive_candidates_after_grace"] += 1
+                    if changed:
+                        summary["updated"] += 1
+                        if not dry_run:
+                            atomic_write_text(path, new_content, path + ".lock")
+                    continue
+
+                if new_w < config["forget_threshold"]:
+                    summary["archived"] += 1
+                    if not dry_run:
+                        try:
+                            print(f"⚠️ [冷冻归档] {file} (权重: {new_w}) -> 移入 archive/")
+                            archive_with_backlink_update(
+                                path,
+                                ARCHIVE_DIR,
+                                os.path.join(BRAIN_DIR, "wiki"),
+                                content=new_content,
+                            )
+                        except FileExistsError:
+                            summary["archived"] -= 1
+                            summary["archive_conflicts"] += 1
                 else:
-                    with open(path, "w", encoding="utf-8") as f:
-                        f.write(new_content)
+                    if changed:
+                        summary["updated"] += 1
+                        if not dry_run:
+                            atomic_write_text(path, new_content, path + ".lock")
+    return summary
 
 
 def render_global_indices():
@@ -220,7 +331,38 @@ def render_global_indices():
             f.write("- *(暂无隔离项目资产)*\n")
 
 
+def parse_today(value: str | None) -> date | None:
+    if value is None:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise ValueError("--today must be YYYY-MM-DD") from exc
+
+
+def _cli(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--config")
+    parser.add_argument("--today")
+    args = parser.parse_args(argv)
+
+    try:
+        summary = scan_and_clean(
+            config_path=args.config,
+            today=parse_today(args.today),
+            dry_run=args.dry_run,
+        )
+    except ValueError as exc:
+        print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False))
+        return 2
+
+    print(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+    if not args.dry_run:
+        render_global_indices()
+        print("🎉 [Engine] 机械索引刷新完毕，交还大模型控制权。")
+    return 0
+
+
 if __name__ == "__main__":
-    scan_and_clean()
-    render_global_indices()
-    print("🎉 [Engine] 机械索引刷新完毕，交还大模型控制权。")
+    raise SystemExit(_cli())

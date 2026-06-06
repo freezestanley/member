@@ -1,14 +1,14 @@
 ---
 type: concept
 created_at: 2026-06-05
-last_modified: 2026-06-05
+last_modified: 2026-06-06
 project: member
 aliases: [热记忆, 热记忆刷新, hot_refresh, 双轨路由, hot_watcher]
 code_symbols: [hot_refresh.py, hot_watcher.sh, collect_notes, render_hot, atomic_write, GLOBAL_TOP_N, PROJECT_TOP_M]
 initial_weight: 1.0
 current_weight: 1.0
-last_activated: 2026-06-05
-access_count: 3
+last_activated: 2026-06-06
+access_count: 4
 status: active
 superseded_by: ""
 ---

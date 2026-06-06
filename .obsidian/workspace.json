@@ -4,17 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "da80e8268b06f45b",
+        "id": "d161e395f82a187f",
         "type": "tabs",
         "children": [
           {
-            "id": "c44984347a4c9464",
+            "id": "57969b081412bd1b",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "关系图谱"
+              "type": "markdown",
+              "state": {
+                "file": "wiki/project_exclusives/test/hot.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "hot"
             }
           }
         ]
@@ -177,12 +181,23 @@
       "bases:新建数据库": false
     }
   },
-  "active": "c44984347a4c9464",
+  "active": "57969b081412bd1b",
   "lastOpenFiles": [
-    "wiki/project_exclusives/test/hot.md",
+    "membervenv/lib/python3.14/site-packages/yaml/__pycache__/tokens.cpython-314.pyc",
+    "membervenv/lib/python3.14/site-packages/yaml/__pycache__/serializer.cpython-314.pyc",
+    "membervenv/lib/python3.14/site-packages/yaml/__pycache__/scanner.cpython-314.pyc",
+    "membervenv/lib/python3.14/site-packages/yaml/__pycache__/resolver.cpython-314.pyc",
+    "membervenv/lib/python3.14/site-packages/yaml/__pycache__/representer.cpython-314.pyc",
+    "membervenv/lib/python3.14/site-packages/yaml/__pycache__/reader.cpython-314.pyc",
+    "membervenv/lib/python3.14/site-packages/yaml/__pycache__/parser.cpython-314.pyc",
+    "membervenv/lib/python3.14/site-packages/yaml/__pycache__/nodes.cpython-314.pyc",
+    "membervenv/lib/python3.14/site-packages/yaml/__pycache__/loader.cpython-314.pyc",
+    "membervenv/lib/python3.14/site-packages/yaml/__pycache__/events.cpython-314.pyc",
+    "membervenv/lib/python3.14/site-packages/yaml/__pycache__/error.cpython-314.pyc",
+    "docs/superpowers/specs/2026-06-06-weight-engine-v2-design.md",
     "wiki/project_exclusives/test/frontend-tech-stack.md",
-    "wiki/project_exclusives/test/frontend-tech-stack.md.tmp",
-    "wiki/project_exclusives/test",
+    "react-component-standards.md",
+    "wiki/project_exclusives/test/hot.md",
     "wiki/global_concepts/周杰伦录音室专辑歌单.md",
     "wiki/project_exclusives/member/bm25-memory-retrieval-pipeline.md",
     "CodeGraph_Vault/rg_body_search.py.md",
@@ -203,17 +218,6 @@
     "CodeGraph_Vault/test_render_hot_empty_outline.md",
     "CodeGraph_Vault/test_protect_restore_roundtrip.md",
     "CodeGraph_Vault/test_protect_links_replaces_wikilinks.md",
-    "CodeGraph_Vault/test_project_route_writes_project_hot.md",
-    "CodeGraph_Vault/test_precise_mode_preserves_wikilinks.md",
-    "CodeGraph_Vault/test_precise_mode_extracts_hit_section.md",
-    "CodeGraph_Vault/test_precise_mode_empty_input.md",
-    "CodeGraph_Vault",
-    "wiki/global_concepts/周杰伦录音室专辑歌单.tmp",
-    "wiki/project_exclusives/member",
-    "scripts/bm25_search.py.tmp.95682.2d5786f8bad6",
-    "archive/project_exclusives",
-    "archive/global_concepts",
-    "archive",
-    "wiki.zip"
+    "CodeGraph_Vault/test_project_route_writes_project_hot.md"
   ]
 }

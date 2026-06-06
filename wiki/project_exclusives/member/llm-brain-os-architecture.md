@@ -1,14 +1,14 @@
 ---
 type: concept
 created_at: 2026-06-05
-last_modified: 2026-06-05
+last_modified: 2026-06-06
 project: member
 aliases: [LLM操作系统, BrainOS, 知识图谱OS, brain-os]
 code_symbols: [memory_manager.py, bm25_search.py, hot_refresh.py, context_dehydrator.py, rg_body_search.py, palace_bridge.sh, vault_sync.sh]
 initial_weight: 1.0
 current_weight: 1.0
-last_activated: 2026-06-05
-access_count: 2
+last_activated: 2026-06-06
+access_count: 3
 status: active
 superseded_by: ""
 ---

@@ -100,20 +100,21 @@ allowed-tools:
      - `历史项目独占实例`：按 `project_exclusives/<项目名>/` 分组列出命中文件，说明各项目里记录的是实现、约束还是踩坑。
      - `历史会话记忆`：列出 MemPalace 命中的 wing、条目标识和必要短摘录；只允许基于真实命中做精简，不得伪造原话。
      - `结论`：总结该关键词更偏"通用规范"还是"项目专属经验"，并在必要时提示下一步用 `/brain-query` 深读。
-9. 回写本地 Wiki 命中笔记的 frontmatter：
-   - 逐个打开命中文件，不要批量跳过
-   - 校验 frontmatter 是否存在
-   - `last_activated`: 改为今天，`YYYY-MM-DD`
-   - `last_modified`: 改为今天，`YYYY-MM-DD`
-   - `access_count`: 在原值基础上加 1
-   - 只改这 3 个字段，不改其他字段
-   - 每改完一个文件，确认已保存
+9. 激活本地 Wiki 命中笔记：
+   - 逐个处理命中文件，不要批量跳过
+   - 路径必须使用命中文件绝对路径
+   - 对每个文件执行：
+     ```bash
+     python3 /Users/za-stanlexu/Documents/member/member/scripts/activation_writer.py \
+       --path "<命中文件绝对路径>" \
+       --context "<原始检索词>"
+     ```
+   - 如果检索语境明确包含高优先级意图，可追加 `--boost 1.4`
+   - 记录 stdout JSON 中的 `current_weight`、`ewma_access`、`last_boost`
+   - 激活失败时报告部分失败，不要手动编辑 frontmatter
 10. `wiki/hot.md` 由 `hot_watcher.sh` 后台进程自动刷新，无需手动触发。
    - 步骤 9 回写 frontmatter 后，watcher 检测到文件变化会自动调用 `hot_refresh.py`
-   - 若 watcher 未运行，可手动执行一次：
-     ```bash
-     python3 /Users/za-stanlexu/Documents/member/member/scripts/hot_refresh.py
-     ```
+   - 若 watcher 未运行，只报告热榜可能延迟刷新，不要手动写 `hot.md`
 11. 更新 `wiki/log.md`（调用脚本，禁止手动写入）：
    ```bash
    python3 /Users/za-stanlexu/Documents/member/member/scripts/log_append.py \
@@ -143,8 +144,8 @@ allowed-tools:
 - 实际运行了至少公共规范域和当前项目域的 MemPalace 检索。
 - 汇报内容可追溯到真实命中结果。
 - 明确区分公共规范、项目专属和历史会话三类来源。
-- 已回写所有命中本地 Wiki 笔记的 frontmatter（access_count+1, last_activated 更新）。
-- hot.md 由 watcher 自动刷新（或确认已手动刷新）。
+- 已通过 `activation_writer.py` 激活所有命中本地 Wiki 笔记。
+- hot.md 由 watcher 自动刷新。
 - 已在 `log.md` 追加本次检索日志。
 
 ## 失败处理
@@ -169,6 +170,8 @@ allowed-tools:
 - <wing 或条目标识>：<短摘录或主题概括>
 
 结论：<该关键词的归属判断与建议动作>
+回写结果：<已更新 | 部分失败 | 未更新>
+激活摘要：<current_weight=N, ewma_access=N, boost=N>
 补充说明：<如无可写"无">
 脱水状态：<已启用 | 已关闭（--dry 模式）>
 ```

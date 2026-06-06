@@ -16,7 +16,7 @@ allowed-tools:
 
 # /brain-query-rg
 
-严格执行”非必要不求助”漏斗模型：先检查自身会话上下文与即时缓冲区；只有在自身没有相关事实时，才允许用 rg 全文匹配检索，再基于命中笔记全文回答，并回写命中笔记的激活信息。
+严格执行"非必要不求助"漏斗模型：先检查自身会话上下文与即时缓冲区；只有在自身没有相关事实时，才允许用 rg 全文匹配检索，再基于命中笔记全文回答，并回写命中笔记的激活信息。
 
 与 `/brain-query` 的唯一区别：检索引擎从 BM25 换成 rg 精确全文匹配。适合知道确切词汇、需要精准定位的场景。
 
@@ -46,27 +46,27 @@ allowed-tools:
      - 你必须立刻停止所有检索。
      - 直接利用当前极热工作记忆执行下一步并回答用户。
      - 不得检索中央知识库。
-     - 不得为了”确认一下”而额外调用 rg 或其他搜索脚本。
+     - 不得为了"确认一下"而额外调用 rg 或其他搜索脚本。
 4. 仅当第 3 步确认以下任一条件成立时，才允许进入第二级决策：降级召回（中央记忆仓库外求）。
    - 你对该话题一片空白、毫无线索。
    - 当前会话被 `/compact`、`/clear` 或等效操作清空。
    - 当前会话与当前打开草稿中不存在足以支撑回答的事实依据。
 5. 获取当前项目名：
    ```bash
-   basename “$(git rev-parse --show-toplevel 2>/dev/null || pwd)”
+   basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
    ```
 6. 根据 `--scope` 值运行 rg 检索：
    - `--scope project`（默认）：
      ```bash
      python3 /Users/za-stanlexu/Documents/member/member/scripts/rg_body_search.py \
-       “<查询词>” \
+      "<查询词>" \
        /Users/za-stanlexu/Documents/member/member/wiki/global_concepts \
        /Users/za-stanlexu/Documents/member/member/wiki/project_exclusives/<当前项目名>
      ```
    - `--scope global`：
      ```bash
      python3 /Users/za-stanlexu/Documents/member/member/scripts/rg_body_search.py \
-       “<查询词>” \
+      "<查询词>" \
        /Users/za-stanlexu/Documents/member/member/wiki/global_concepts \
        /Users/za-stanlexu/Documents/member/member/wiki/project_exclusives
      ```
@@ -88,20 +88,21 @@ allowed-tools:
    - 优先使用笔记中的结论、约束、定义、经验
    - 如果多篇笔记冲突，明确指出冲突
    - 如果内容不足，明确说明不足
-10. 回写每个命中文件的 frontmatter：
-   - 逐个打开命中文件，不要批量跳过
-   - 校验 frontmatter 是否存在
-   - `last_activated`: 改为今天，`YYYY-MM-DD`
-   - `last_modified`: 改为今天，`YYYY-MM-DD`
-   - `access_count`: 在原值基础上加 1
-   - 只改这 3 个字段，不改其他字段
-   - 每改完一个文件，确认已保存
+10. 激活每个命中文件：
+   - 逐个处理命中文件，不要批量跳过
+   - 路径必须使用命中文件绝对路径
+   - 对每个文件执行：
+     ```bash
+     python3 /Users/za-stanlexu/Documents/member/member/scripts/activation_writer.py \
+       --path "<命中文件绝对路径>" \
+       --context "<原始查询词>"
+     ```
+   - 如果查询语境明确包含高优先级意图，可追加 `--boost 1.4`
+   - 记录 stdout JSON 中的 `current_weight`、`ewma_access`、`last_boost`
+   - 激活失败时报告部分失败，不要手动编辑 frontmatter
 11. `wiki/hot.md` 由 `hot_watcher.sh` 后台进程自动刷新，无需手动触发。
    - 步骤 10 回写 frontmatter 后，watcher 检测到文件变化会自动调用 `hot_refresh.py`
-   - 若 watcher 未运行，可手动执行一次：
-     ```bash
-     python3 /Users/za-stanlexu/Documents/member/member/scripts/hot_refresh.py
-     ```
+   - 若 watcher 未运行，只报告热榜可能延迟刷新，不要手动写 `hot.md`
 12. 更新 `wiki/log.md`（调用脚本，禁止手动写入）：
    ```bash
    python3 /Users/za-stanlexu/Documents/member/member/scripts/log_append.py \
@@ -130,8 +131,8 @@ allowed-tools:
 - 实际运行了 rg 检索命令。
 - 回答前已读完命中文件全文。
 - 回答可追溯到命中文件。
-- 已更新命中文件 frontmatter。
-- hot.md 由 watcher 自动刷新（或确认已手动刷新）。
+- 已通过 `activation_writer.py` 激活命中文件。
+- hot.md 由 watcher 自动刷新。
 - 已在 `log.md` 追加本次查询日志。
 
 ## 失败处理
@@ -152,6 +153,7 @@ allowed-tools:
 - <文件路径3>
 
 回写结果：<已更新 | 部分失败 | 未更新>
+激活摘要：<current_weight=N, ewma_access=N, boost=N>
 补充说明：<如无可写"无">
 脱水状态：<已启用 | 已关闭（--dry 模式）>
 ```
@@ -166,7 +168,7 @@ allowed-tools:
 - 当前打开的物理文件草稿（如适用）
 
 检索状态：未检索中央知识库
-补充说明：命中第一级“自身热记忆自查”，按规则停止外部求助
+补充说明：命中第一级"自身热记忆自查"，按规则停止外部求助
 ```
 
 ## 禁令

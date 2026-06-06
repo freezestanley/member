@@ -1,0 +1,29 @@
+category_half_life:
+  strategy: 90
+  fact: 60
+  decision: 75
+  log: 7
+  spec: 120
+  general: 30
+
+importance_k: 0.6
+
+freq_k: 0.15
+freq_bonus_max: 1.6
+ewma_half_life_days: 14
+ewma_max: 20.0
+ewma_migration_cap: 5.0
+
+boost_ttl_days: 7
+boost_keywords:
+  high: ["重要", "紧急", "开会", "决策", "上线"]
+  medium: ["参考", "复习", "回顾"]
+boost_values:
+  high: 1.4
+  medium: 1.2
+  default: 1.0
+
+weight_min: 0.01
+weight_max: 5.0
+forget_threshold: 0.15
+revive_weight_margin: 0.05

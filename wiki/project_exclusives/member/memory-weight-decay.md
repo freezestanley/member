@@ -1,14 +1,14 @@
 ---
 type: concept
 created_at: 2026-06-05
-last_modified: 2026-06-05
+last_modified: 2026-06-06
 project: member
 aliases: [记忆衰减, 权重衰减, 遗忘曲线, memory_decay]
 code_symbols: [memory_manager.py, calculate_weight, scan_and_clean, archive_with_backlink_update, HALF_LIFE_DAYS, FORGET_THRESHOLD]
 initial_weight: 1.0
 current_weight: 1.0
-last_activated: 2026-06-05
-access_count: 2
+last_activated: 2026-06-06
+access_count: 3
 status: active
 superseded_by: ""
 ---

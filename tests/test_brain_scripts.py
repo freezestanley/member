@@ -1,11 +1,14 @@
+from datetime import date
+import json
 import sys, math
+import pytest
 sys.path.insert(0, "scripts")
 from memory_manager import calculate_weight
 
 
 def test_cold_start_access_count_1():
     """access_count=1（新笔记）时不应有频率奖励，weight = initial × decay"""
-    w = calculate_weight(1.0, "2026-06-03", 1)
+    w = calculate_weight(1.0, date.today().isoformat(), 1)
     # days=0，decay=1.0，ln(1)=0，bonus=1.0 → weight=1.0
     assert abs(w - 1.0) < 0.001, f"期望 1.0，实际 {w}"
 
@@ -21,9 +24,10 @@ def test_cold_start_access_count_0_no_crash():
 
 def test_frequency_bonus_increases_with_access():
     """高频笔记权重应高于低频笔记（相同 initial_weight 和 last_activated）"""
-    w1 = calculate_weight(1.0, "2026-06-03", 1)
-    w5 = calculate_weight(1.0, "2026-06-03", 5)
-    w20 = calculate_weight(1.0, "2026-06-03", 20)
+    today = date.today().isoformat()
+    w1 = calculate_weight(1.0, today, 1)
+    w5 = calculate_weight(1.0, today, 5)
+    w20 = calculate_weight(1.0, today, 20)
     assert w5 > w1, f"access=5 权重应 > access=1，实际 {w5} vs {w1}"
     assert w20 > w5, f"access=20 权重应 > access=5，实际 {w20} vs {w5}"
 
@@ -110,6 +114,134 @@ def test_archive_updates_backlinks_cross_dir(tmp_path):
     unchanged = proj_note.read_text()
     assert "[[shared-concept]]" in unchanged
     assert "~~" not in unchanged
+
+
+def test_archive_conflict_does_not_overwrite_or_mark_source(tmp_path):
+    """归档目标已存在时，应 fail-fast，源文件仍保持 active。"""
+    wiki_dir = tmp_path / "wiki"
+    global_dir = wiki_dir / "global_concepts"
+    archive_dir = tmp_path / "archive"
+    global_dir.mkdir(parents=True)
+    (archive_dir / "global_concepts").mkdir(parents=True)
+
+    target = global_dir / "same.md"
+    target.write_text(
+        "---\nstatus: active\ncurrent_weight: 0.1\n---\n# Source\n",
+        encoding="utf-8",
+    )
+    existing = archive_dir / "global_concepts" / "same.md"
+    existing.write_text("keep me", encoding="utf-8")
+
+    from memory_manager import archive_with_backlink_update
+
+    with pytest.raises(FileExistsError):
+        archive_with_backlink_update(str(target), str(archive_dir), str(wiki_dir))
+
+    assert target.exists()
+    assert "status: active" in target.read_text(encoding="utf-8")
+    assert existing.read_text(encoding="utf-8") == "keep me"
+
+
+def test_build_frontmatter_includes_v2_fields(tmp_path, monkeypatch):
+    from memory_manager import _build_frontmatter
+    import memory_manager as m
+
+    wiki = tmp_path / "wiki"
+    note = wiki / "global_concepts" / "new.md"
+    note.parent.mkdir(parents=True)
+    note.write_text("# New\n", encoding="utf-8")
+    monkeypatch.setattr(m, "BRAIN_DIR", str(tmp_path))
+
+    frontmatter = _build_frontmatter(str(note))
+
+    for field in [
+        "weight_schema_version: 2",
+        "category: general",
+        "importance: 1",
+        "ewma_access: 0.0",
+        "last_boost: 1.0",
+        "last_boosted_at: \"\"",
+        "last_weight_migrated_at:",
+    ]:
+        assert field in frontmatter
+
+
+def test_scan_and_clean_dry_run_has_no_writes_or_index_refresh(tmp_path, monkeypatch, capsys):
+    import memory_manager as m
+
+    wiki = tmp_path / "wiki"
+    global_dir = wiki / "global_concepts"
+    project_dir = wiki / "project_exclusives"
+    archive_dir = tmp_path / "archive"
+    global_dir.mkdir(parents=True)
+    project_dir.mkdir(parents=True)
+    note = global_dir / "legacy.md"
+    note.write_text(
+        "---\n"
+        "initial_weight: 1.0\n"
+        "current_weight: 1.0\n"
+        "last_activated: 2025-01-01\n"
+        "access_count: 1\n"
+        "status: active\n"
+        "---\n# Legacy\n",
+        encoding="utf-8",
+    )
+    before = note.read_text(encoding="utf-8")
+    monkeypatch.setattr(m, "BRAIN_DIR", str(tmp_path))
+    monkeypatch.setattr(m, "GLOBAL_DIR", str(global_dir))
+    monkeypatch.setattr(m, "PROJECT_DIR", str(project_dir))
+    monkeypatch.setattr(m, "ARCHIVE_DIR", str(archive_dir))
+
+    def fail_render():
+        raise AssertionError("dry-run must not refresh index")
+
+    monkeypatch.setattr(m, "render_global_indices", fail_render)
+
+    assert m._cli(["--dry-run", "--today", "2026-06-06"]) == 0
+    summary = json.loads(capsys.readouterr().out)
+
+    assert summary["migrated"] == 1
+    assert note.read_text(encoding="utf-8") == before
+    assert not archive_dir.exists()
+
+
+def test_first_v2_migration_gets_archive_grace_then_next_scan_archives(tmp_path, monkeypatch):
+    import memory_manager as m
+
+    wiki = tmp_path / "wiki"
+    global_dir = wiki / "global_concepts"
+    project_dir = wiki / "project_exclusives"
+    archive_dir = tmp_path / "archive"
+    global_dir.mkdir(parents=True)
+    project_dir.mkdir(parents=True)
+    note = global_dir / "cold.md"
+    note.write_text(
+        "---\n"
+        "initial_weight: 0.01\n"
+        "current_weight: 1.0\n"
+        "last_activated: 2025-01-01\n"
+        "access_count: 1\n"
+        "status: active\n"
+        "---\n# Cold\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(m, "BRAIN_DIR", str(tmp_path))
+    monkeypatch.setattr(m, "GLOBAL_DIR", str(global_dir))
+    monkeypatch.setattr(m, "PROJECT_DIR", str(project_dir))
+    monkeypatch.setattr(m, "ARCHIVE_DIR", str(archive_dir))
+
+    first = m.scan_and_clean(today=date(2026, 6, 6))
+
+    assert first["migrated"] == 1
+    assert first["archive_candidates_after_grace"] == 1
+    assert note.exists()
+    assert "weight_schema_version: 2" in note.read_text(encoding="utf-8")
+
+    second = m.scan_and_clean(today=date(2026, 6, 7))
+
+    assert second["archived"] == 1
+    assert not note.exists()
+    assert (archive_dir / "global_concepts" / "cold.md").exists()
 
 
 def test_vault_sync_skips_when_lock_exists(tmp_path):
