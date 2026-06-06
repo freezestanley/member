@@ -183,6 +183,11 @@
   },
   "active": "57969b081412bd1b",
   "lastOpenFiles": [
+    "docs/plans/2026-06-06-obsidian-first-memory-vault-implementation.md",
+    "docs/plans/2026-06-06-obsidian-first-memory-vault-design.md",
+    "docs/plans",
+    "docs/memory-repository-user-manual.md",
+    "docs/memory-repository-technical-solution.md",
     "membervenv/lib/python3.14/site-packages/yaml/__pycache__/tokens.cpython-314.pyc",
     "membervenv/lib/python3.14/site-packages/yaml/__pycache__/serializer.cpython-314.pyc",
     "membervenv/lib/python3.14/site-packages/yaml/__pycache__/scanner.cpython-314.pyc",
@@ -192,8 +197,6 @@
     "membervenv/lib/python3.14/site-packages/yaml/__pycache__/parser.cpython-314.pyc",
     "membervenv/lib/python3.14/site-packages/yaml/__pycache__/nodes.cpython-314.pyc",
     "membervenv/lib/python3.14/site-packages/yaml/__pycache__/loader.cpython-314.pyc",
-    "membervenv/lib/python3.14/site-packages/yaml/__pycache__/events.cpython-314.pyc",
-    "membervenv/lib/python3.14/site-packages/yaml/__pycache__/error.cpython-314.pyc",
     "docs/superpowers/specs/2026-06-06-weight-engine-v2-design.md",
     "wiki/project_exclusives/test/frontend-tech-stack.md",
     "react-component-standards.md",
@@ -215,9 +218,6 @@
     "CodeGraph_Vault/test_assemble_second_oversized_doc_appends_warning.md",
     "CodeGraph_Vault/test_restore_links_recovers_wikilinks.md",
     "CodeGraph_Vault/test_render_hot_outline_format.md",
-    "CodeGraph_Vault/test_render_hot_empty_outline.md",
-    "CodeGraph_Vault/test_protect_restore_roundtrip.md",
-    "CodeGraph_Vault/test_protect_links_replaces_wikilinks.md",
-    "CodeGraph_Vault/test_project_route_writes_project_hot.md"
+    "CodeGraph_Vault/test_render_hot_empty_outline.md"
   ]
 }
