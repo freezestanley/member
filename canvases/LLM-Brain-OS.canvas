@@ -1,0 +1,29 @@
+{
+	"nodes":[
+		{"id":"dashboard","type":"file","file":"dashboards/记忆治理总览.md","x":0,"y":0,"width":300,"height":160},
+		{"id":"global-hot","type":"file","file":"wiki/global_hot.md","x":360,"y":-220,"width":300,"height":160},
+		{"id":"project-hot","type":"file","file":"wiki/project_exclusives/member/hot.md","x":360,"y":0,"width":300,"height":160},
+		{"id":"architecture","type":"file","file":"wiki/project_exclusives/member/llm-brain-os-architecture.md","x":360,"y":220,"width":300,"height":160},
+		{"id":"bm25","type":"file","file":"wiki/project_exclusives/member/bm25-memory-retrieval-pipeline.md","x":720,"y":-220,"width":300,"height":160},
+		{"id":"dehydrator","type":"file","file":"wiki/project_exclusives/member/context-dehydrator.md","x":1080,"y":-220,"width":300,"height":160},
+		{"id":"weight","type":"file","file":"wiki/project_exclusives/member/memory-weight-decay.md","x":720,"y":0,"width":300,"height":160},
+		{"id":"hot-routing","type":"file","file":"wiki/project_exclusives/member/hot-memory-dual-track.md","x":1080,"y":0,"width":300,"height":160},
+		{"id":"technical-solution","type":"file","file":"docs/memory-repository-technical-solution.md","x":720,"y":220,"width":300,"height":160},
+		{"id":"manual","type":"file","file":"docs/memory-repository-user-manual.md","x":1080,"y":220,"width":300,"height":160},
+		{"id":"templates","type":"text","text":"Templater 入库模板\\ntemplates/*.md","x":-360,"y":-120,"width":260,"height":120},
+		{"id":"bases","type":"text","text":"Obsidian Bases\\nbases/*.base","x":-360,"y":80,"width":260,"height":120}
+	],
+	"edges":[
+		{"id":"e1","fromNode":"templates","fromSide":"right","toNode":"dashboard","toSide":"left"},
+		{"id":"e2","fromNode":"bases","fromSide":"right","toNode":"dashboard","toSide":"left"},
+		{"id":"e3","fromNode":"dashboard","fromSide":"right","toNode":"global-hot","toSide":"left"},
+		{"id":"e4","fromNode":"dashboard","fromSide":"right","toNode":"project-hot","toSide":"left"},
+		{"id":"e5","fromNode":"dashboard","fromSide":"right","toNode":"architecture","toSide":"left"},
+		{"id":"e6","fromNode":"architecture","fromSide":"right","toNode":"bm25","toSide":"left"},
+		{"id":"e7","fromNode":"bm25","fromSide":"right","toNode":"dehydrator","toSide":"left"},
+		{"id":"e8","fromNode":"architecture","fromSide":"right","toNode":"weight","toSide":"left"},
+		{"id":"e9","fromNode":"weight","fromSide":"right","toNode":"hot-routing","toSide":"left"},
+		{"id":"e10","fromNode":"architecture","fromSide":"right","toNode":"technical-solution","toSide":"left"},
+		{"id":"e11","fromNode":"technical-solution","fromSide":"right","toNode":"manual","toSide":"left"}
+	]
+}
