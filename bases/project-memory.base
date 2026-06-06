@@ -1,7 +1,7 @@
 filters:
   and:
-    - 'file.inFolder("wiki/project_exclusives/member")'
-    - 'status == "active"'
+    - file.inFolder("wiki/project_exclusives/member")
+    - status == "active"
 properties:
   file.name:
     displayName: Note
@@ -16,10 +16,10 @@ properties:
 views:
   - type: table
     name: Member memory
-    limit: 100
     order:
       - file.name
       - category
       - current_weight
       - access_count
       - last_activated
+    limit: 100

@@ -1,8 +1,8 @@
 filters:
   and:
-    - 'file.inFolder("wiki")'
-    - 'status == "active"'
-    - 'current_weight < 0.3'
+    - file.inFolder("wiki")
+    - status == "active"
+    - current_weight < 0.3
 properties:
   file.name:
     displayName: Note
@@ -15,9 +15,9 @@ properties:
 views:
   - type: table
     name: Archive candidates
-    limit: 100
     order:
       - file.name
       - project
       - current_weight
       - last_activated
+    limit: 100

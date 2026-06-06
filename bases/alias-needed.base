@@ -1,8 +1,8 @@
 filters:
   and:
-    - 'file.inFolder("wiki")'
-    - 'status == "active"'
-    - 'aliases.isEmpty()'
+    - file.inFolder("wiki")
+    - status == "active"
+    - aliases.isEmpty()
 properties:
   file.name:
     displayName: Note
@@ -15,9 +15,9 @@ properties:
 views:
   - type: table
     name: Alias needed
-    limit: 100
     order:
       - file.name
       - project
       - aliases
       - last_modified
+    limit: 100

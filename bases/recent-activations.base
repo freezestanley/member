@@ -1,7 +1,7 @@
 filters:
   and:
-    - 'file.inFolder("wiki")'
-    - 'status == "active"'
+    - file.inFolder("wiki")
+    - status == "active"
 properties:
   file.name:
     displayName: Note
@@ -14,9 +14,9 @@ properties:
 views:
   - type: table
     name: Recent activations
-    limit: 100
     order:
       - file.name
       - project
       - current_weight
       - last_activated
+    limit: 100
