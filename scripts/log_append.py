@@ -14,12 +14,19 @@ log_append.py — 向 wiki/log.md 追加查询日志，并保持最多 50 条记
 - 空日期组（标题下无记录）自动清除
 """
 
+import os
 import sys
 import re
 from datetime import datetime
 from pathlib import Path
 
-LOG_PATH = Path(__file__).parent.parent / "wiki" / "log.md"
+# 确保 scripts/ 目录在 sys.path 中
+_SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+
+from config import LOG_PATH
+
 MAX_ENTRIES = 50
 
 

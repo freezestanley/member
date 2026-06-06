@@ -2,10 +2,18 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import sys
 from pathlib import Path
 
+# 确保 scripts/ 目录在 sys.path 中
+_SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+
 from frontmatter_utils import parse_frontmatter_text, split_frontmatter
+from config import GENERATED_FILES
 
 
 WIKILINK_RE = re.compile(r"\[\[([^\]|#]+)(?:[#|][^\]]*)?\]\]")
@@ -29,7 +37,7 @@ def parse_note_metadata(path: Path, root: Path) -> dict:
 
 def _iter_notes(wiki_root: Path):
     for path in wiki_root.rglob("*.md"):
-        if path.name in {"hot.md", "global_hot.md", "index.md", "log.md"}:
+        if path.name in GENERATED_FILES:
             continue
         yield path
 

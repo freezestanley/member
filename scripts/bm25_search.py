@@ -12,12 +12,9 @@ if _SCRIPTS_DIR not in sys.path:
 import jieba
 from rank_bm25 import BM25Okapi
 from utils import extract_aliases
+from config import BRAIN_DIR, GLOBAL_DIR, PROJECT_DIR, BM25_CACHE_PATH, BM25_TOP_K, SKIP_STATUSES
 
-# 🚨 锁死中央知识库的绝对路径
-BRAIN_DIR = "/Users/za-stanlexu/Documents/member/member"
-GLOBAL_DIR = os.path.join(BRAIN_DIR, "wiki/global_concepts")
-PROJECT_DIR = os.path.join(BRAIN_DIR, "wiki/project_exclusives")
-CACHE_PATH = os.path.join(BRAIN_DIR, "_inbox/.bm25_cache.pkl")
+CACHE_PATH = str(BM25_CACHE_PATH)
 
 
 def clean_and_tokenize(text):
@@ -70,7 +67,7 @@ def collect_md_paths(search_dirs):
                     with open(path, "r", encoding="utf-8") as fh:
                         head = fh.read(512)
                     status_match = re.search(r'^status:\s*(\S+)', head, re.MULTILINE)
-                    if status_match and status_match.group(1) in ("archived", "deprecated", "incomplete"):
+                    if status_match and status_match.group(1) in SKIP_STATUSES:
                         continue
                 except Exception:
                     pass
@@ -228,9 +225,9 @@ def main():
 
     final_results.sort(key=lambda x: x[0], reverse=True)
 
-    print("=== BM25 记忆加权交叉检索结果 (Top 3) ===")
-    for score, path in final_results[:3]:
-        rel_path = os.path.relpath(path, BRAIN_DIR)
+    print(f"=== BM25 记忆加权交叉检索结果 (Top {BM25_TOP_K}) ===")
+    for score, path in final_results[:BM25_TOP_K]:
+        rel_path = os.path.relpath(path, str(BRAIN_DIR))
         print(f"📄 [加权得分: {round(score, 2)}] 相对物理路径: {rel_path}")
 
 

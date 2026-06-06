@@ -13,7 +13,10 @@ except ModuleNotFoundError:  # pragma: no cover - exercised only without depende
     yaml = None
 
 
-DEFAULT_CONFIG_PATH = Path(__file__).parent.parent / "config" / "weight_config.yml"
+try:
+    from config import WEIGHT_CONFIG_PATH as DEFAULT_CONFIG_PATH
+except ImportError:
+    DEFAULT_CONFIG_PATH = Path(__file__).parent.parent / "config" / "weight_config.yml"
 
 DEFAULT_CONFIG = {
     "category_half_life": {

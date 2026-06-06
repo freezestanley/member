@@ -20,13 +20,7 @@ from weight_engine import (
     days_since,
     load_config,
 )
-
-
-BRAIN_DIR = Path("/Users/za-stanlexu/Documents/member/member")
-WIKI_ROOT = BRAIN_DIR / "wiki"
-GLOBAL_DIR = WIKI_ROOT / "global_concepts"
-PROJECT_DIR = WIKI_ROOT / "project_exclusives"
-GENERATED_FILES = {"hot.md", "global_hot.md", "index.md", "log.md"}
+from config import GLOBAL_DIR, PROJECT_DIR, GENERATED_FILES, SKIP_STATUSES
 
 
 class ActivationError(Exception):
@@ -106,7 +100,7 @@ def activate_note(
 
     fm = parse_frontmatter_text(fm_text)
     status = normalize_status(fm.get("status"))
-    if status in {"archived", "deprecated", "incomplete"}:
+    if status in SKIP_STATUSES:
         raise ActivationError(f"cannot activate status: {status}", 3)
 
     updates = _schema_updates(fm, today, config)

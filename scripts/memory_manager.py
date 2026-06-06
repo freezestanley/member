@@ -20,18 +20,26 @@ from weight_engine import (
     clamp_int,
     load_config,
 )
+from config import (
+    BRAIN_DIR,
+    GLOBAL_DIR,
+    PROJECT_DIR,
+    ARCHIVE_DIR,
+    HALF_LIFE_DAYS,
+    FORGET_THRESHOLD,
+    GENERATED_FILES,
+    SKIP_STATUSES,
+    WIKI_ROOT,
+)
 
-# 🚨 锁死中央知识库的绝对路径
-BRAIN_DIR = "/Users/za-stanlexu/Documents/member/member"
-GLOBAL_DIR = os.path.join(BRAIN_DIR, "wiki/global_concepts")
-PROJECT_DIR = os.path.join(BRAIN_DIR, "wiki/project_exclusives")
-ARCHIVE_DIR = os.path.join(BRAIN_DIR, "archive")  # 与wiki/同级
+# 字符串形式供 os.path 函数使用
+BRAIN_DIR = str(BRAIN_DIR)
+GLOBAL_DIR = str(GLOBAL_DIR)
+PROJECT_DIR = str(PROJECT_DIR)
+ARCHIVE_DIR = str(ARCHIVE_DIR)
 
-HALF_LIFE_DAYS = 30
-FORGET_THRESHOLD = 0.15
-
-# 自动生成文件，不补 frontmatter，不参与衰减
-_GENERATED_FILES = {"hot.md", "global_hot.md", "index.md", "log.md"}
+# 自动生成文件（从 config 导入，别名保留以兼容本文件内部引用）
+_GENERATED_FILES = GENERATED_FILES
 
 
 def calculate_weight(initial_w, last_active_str, access_count):
@@ -49,7 +57,7 @@ def calculate_weight(initial_w, last_active_str, access_count):
 def _build_frontmatter(path: str) -> str:
     """根据路径推断 project，用文件 mtime 作日期，生成标准 frontmatter。"""
     mtime = datetime.fromtimestamp(os.path.getmtime(path)).strftime("%Y-%m-%d")
-    rel = os.path.relpath(path, os.path.join(BRAIN_DIR, "wiki"))
+    rel = os.path.relpath(path, str(WIKI_ROOT))
     parts = rel.replace("\\", "/").split("/")
     if parts[0] == "global_concepts":
         project = "global"
@@ -243,7 +251,7 @@ def scan_and_clean(
 
                 fm = parse_frontmatter_text(fm_text)
                 status = normalize_status(fm.get("status"))
-                if status in {"archived", "deprecated", "incomplete"}:
+                if status in SKIP_STATUSES:
                     summary["skipped"] += 1
                     continue
 
@@ -273,7 +281,7 @@ def scan_and_clean(
                             archive_with_backlink_update(
                                 path,
                                 ARCHIVE_DIR,
-                                os.path.join(BRAIN_DIR, "wiki"),
+                                str(WIKI_ROOT),
                                 content=new_content,
                             )
                         except FileExistsError:
@@ -310,7 +318,7 @@ def render_global_indices():
                         if file.endswith(".md") and file not in _GENERATED_FILES:
                             project_notes_map[item].append(file.replace(".md", ""))
 
-    index_path = os.path.join(BRAIN_DIR, "wiki/index.md")
+    index_path = str(WIKI_ROOT / "index.md")
     with open(index_path, "w", encoding="utf-8") as f:
         f.write("# 🗺️ Central Index ── 中央知识网络全局全景主索引\n\n")
         f.write("## 🪐 一、 行业通用技术概念与开发总规范\n")

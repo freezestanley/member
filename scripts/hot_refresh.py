@@ -13,14 +13,19 @@ hot_refresh.py — 双轨路由热记忆刷新。
 
 import argparse
 import fcntl
+import os
 import re
 import sys
 import time
 from datetime import datetime
 from pathlib import Path
 
-GLOBAL_TOP_N = 8
-PROJECT_TOP_M = 20
+# 确保 scripts/ 目录在 sys.path 中，以便导入 config
+_SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+
+from config import GLOBAL_TOP_N, PROJECT_TOP_M, SKIP_STATUSES, GENERATED_FILES
 
 HEADING_RE = re.compile(r'^(#{1,3})\s+(.+)$')
 
@@ -65,7 +70,7 @@ def collect_notes(scan_dir: Path) -> list[dict]:
         return notes
     for md_file in scan_dir.rglob("*.md"):
         # 跳过自身（hot.md）
-        if md_file.name == "hot.md" or md_file.name == "global_hot.md":
+        if md_file.name in GENERATED_FILES:
             continue
         try:
             text = md_file.read_text(encoding="utf-8")
@@ -74,7 +79,7 @@ def collect_notes(scan_dir: Path) -> list[dict]:
         fm = parse_frontmatter(text)
         if not fm:
             continue
-        if fm.get("status") in ("archived", "deprecated", "incomplete"):
+        if fm.get("status") in SKIP_STATUSES:
             continue
         title = extract_title(text) or md_file.stem
         try:
