@@ -19,4 +19,8 @@
 - [前端开发规范 — 技术栈](project_exclusives/test/frontend-tech-stack.md) — test 项目前端技术栈约定：React + antd，禁用 @ant-design/icons
 
 ## project_exclusives/member
+- [记忆仓库对外命令参考](project_exclusives/member/brain-commands-reference.md) — 6 条命令的作用、参数、调用链和案例
 - [Obsidian UX 层](project_exclusives/member/obsidian-ux-layer.md) — Obsidian 原生 UX 层架构设计，含 templates、dashboards、bases、canvas 和 obsidian_audit.py
+
+## project_exclusives/atest
+- [全局枚举 status 定义](project_exclusives/atest/global-status-enum.md) — atest 项目 status 字符串枚举，ok 表示正常状态

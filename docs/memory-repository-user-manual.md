@@ -606,7 +606,342 @@ git status --short
 bash scripts/vault_sync.sh
 ```
 
-## 13. 使用原则
+## 13. 命令完整参考
+
+### 13.1 命令总览
+
+| 命令 | 作用 | 默认 scope |
+| --- | --- | --- |
+| `/brain-query` | BM25 加权召回，基于知识库回答问题 | project |
+| `/brain-query-rg` | rg 精确全文匹配，基于知识库回答问题 | project |
+| `/brain-search` | BM25 跨库审计，看某词在哪些资产里出现 | global |
+| `/brain-search-rg` | rg 精确跨库审计，看某词完整出现位置 | global |
+| `/brain-ingest` | 把当前对话的稳定结论写入知识库 | — |
+| `/brain-consolidate` | 执行权重衰减与归档整理 | — |
+
+**query 和 search 的本质区别**：
+
+- `query` 系列目标是"回答问题"，输出是基于命中笔记的确定性结论。
+- `search` 系列目标是"审计分布"，输出是资产出现位置报告，不直接给出确定性结论。
+
+**BM25 和 rg 的本质区别**：
+
+- BM25（无 `-rg` 后缀）：词频语义召回，适合自然语言问题或不确定笔记标题的场景。
+- rg（有 `-rg` 后缀）：正文正则精确匹配，适合已知准确关键词、代码符号、技术术语、需要定位行号的场景。
+
+---
+
+### 13.2 `/brain-query` — BM25 召回问答
+
+**作用**：先查当前会话热记忆；热记忆不足时，用 BM25 检索知识库，取 Top 3 笔记脱水后回答，并激活命中笔记。
+
+**调用方式**：
+
+```text
+/brain-query <查询词> [--scope project|global] [--dry]
+```
+
+**参数说明**：
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `<查询词>` | 必填 | 自然语言问题或关键词 |
+| `--scope project` | 默认 | 当前项目私有笔记 + global_concepts |
+| `--scope global` | — | 全库所有项目笔记 + global_concepts |
+| `--dry` | 关闭 | 关闭脱水管道，直接读原文；适合短笔记、需逐字引用、调试脱水时 |
+
+**底层调用链**：
+
+```
+bm25_search.py "<查询词>" [--project <name>]
+  → Top 3 路径
+  → context_dehydrator.py --mode summary（默认）/ 直接 Read（--dry）
+  → 激活：activation_writer.py --path <file> --context "<查询词>"
+  → 日志：log_append.py "brain-query" "<查询词>" "<摘要>"
+```
+
+**案例**：
+
+```text
+# 基础用法
+/brain-query 权重衰减公式
+
+# 跨项目检索
+/brain-query 记忆检索管道 --scope global
+
+# 关闭脱水，直接读原文
+/brain-query EWMA --dry
+```
+
+执行后输出：
+```
+回答：<基于命中笔记的答案>
+依据笔记：wiki/project_exclusives/member/memory-weight-decay.md
+回写结果：已更新
+激活摘要：current_weight=1.021, ewma_access=1.0, boost=1.0
+```
+
+---
+
+### 13.3 `/brain-query-rg` — rg 精确匹配问答
+
+**作用**：与 `/brain-query` 流程完全相同，检索引擎换为 rg 正文正则匹配。命中带行号，脱水使用 precise 模式（按标题段落裁剪，保留代码块完整性）。
+
+**调用方式**：
+
+```text
+/brain-query-rg <关键词> [--scope project|global] [--dry]
+```
+
+**参数说明**：同 `/brain-query`，参数含义一致。
+
+**底层调用链**：
+
+```
+rg_body_search.py "<关键词>" <目录...>
+  → 命中文件:行号
+  → context_dehydrator.py --mode precise --hits <file>:<lines>（默认）/ 直接 Read（--dry）
+  → 激活：activation_writer.py
+  → 日志：log_append.py "brain-query-rg" ...
+```
+
+**与 `/brain-query` 的选择依据**：
+
+| 场景 | 推荐命令 |
+| --- | --- |
+| 自然语言问题，不知道笔记标题 | `/brain-query` |
+| 已知准确关键词、函数名、配置项 | `/brain-query-rg` |
+| BM25 没搜到但确定笔记里有这个词 | `/brain-query-rg` |
+| 需要定位到具体行号 | `/brain-query-rg` |
+
+**案例**：
+
+```text
+# 精确查代码符号
+/brain-query-rg activation_writer
+
+# 精确查配置项
+/brain-query-rg forget_threshold
+
+# 跨全库精确查
+/brain-query-rg WeightEngine --scope global
+```
+
+---
+
+### 13.4 `/brain-search` — BM25 跨库资产审计
+
+**作用**：盘点某个关键词在公共规范（global_concepts）、项目专属笔记（project_exclusives）和 MemPalace 历史会话中的分布，输出"跨项目技术资产审计报告"。不直接给确定性答案。
+
+**调用方式**：
+
+```text
+/brain-search <检索词> [--scope project|global] [--dry]
+```
+
+**参数说明**：
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `<检索词>` | 必填 | 关键词或主题 |
+| `--scope global` | **默认** | 全库所有项目笔记 + global_concepts + MemPalace 公共规范域 |
+| `--scope project` | — | 当前项目 + global_concepts + MemPalace 当前项目域 |
+| `--dry` | 关闭 | 关闭脱水管道 |
+
+注意：`/brain-search` 默认 scope 是 `global`，与 `query` 系列（默认 `project`）相反。
+
+**底层调用链**：
+
+```
+bm25_search.py "<检索词>" [--project <name>]
+  → Top N 路径 → context_dehydrator.py --mode summary
+mempalace search "<检索词>" --wing "wing_global_shared" --limit 3
+mempalace search "<检索词>" --wing "wing_project_<name>" --limit 3（--scope project 时）
+  → 合并输出审计报告
+  → 激活：activation_writer.py（仅本地 wiki 命中笔记）
+  → 日志：log_append.py "brain-search" ...
+```
+
+**案例**：
+
+```text
+# 审计"记忆权重"在全库的分布
+/brain-search 记忆权重
+
+# 只审计当前项目范围
+/brain-search EWMA --scope project
+
+# 要看原文，关闭脱水
+/brain-search hot_refresh --dry
+```
+
+输出格式：
+```
+跨项目技术资产审计报告
+
+公共规范沉淀：
+- wiki/global_concepts/xxx.md：通用权重衰减原则
+
+历史项目独占实例：
+- member：wiki/project_exclusives/member/memory-weight-decay.md | V2 权重公式实现
+
+历史会话记忆：
+- wing_project_member：2026-06-04 讨论 EWMA 参数调整
+
+结论：该词为项目专属经验，建议用 /brain-query 深读
+```
+
+---
+
+### 13.5 `/brain-search-rg` — rg 精确跨库资产审计
+
+**作用**：与 `/brain-search` 流程完全相同，检索引擎换为 rg 正文正则匹配，命中带行号，脱水使用 precise 模式。适合需要审计某个精确词汇的所有出现位置。
+
+**调用方式**：
+
+```text
+/brain-search-rg <检索词> [--scope project|global] [--dry]
+```
+
+**参数说明**：同 `/brain-search`，参数含义一致。
+
+**与 `/brain-search` 的选择依据**：
+
+| 场景 | 推荐命令 |
+| --- | --- |
+| 模糊主题审计 | `/brain-search` |
+| 精确词汇/符号的所有出现位置 | `/brain-search-rg` |
+| 需要行号定位 | `/brain-search-rg` |
+
+**案例**：
+
+```text
+# 审计函数名在全库的所有出现位置
+/brain-search-rg upsert_frontmatter_fields
+
+# 审计配置项在当前项目的出现位置
+/brain-search-rg boost_ttl_days --scope project
+```
+
+---
+
+### 13.6 `/brain-ingest` — 写入知识库
+
+**作用**：把当前对话中已经稳定、可复用的单一知识点写成笔记，原子写入知识库，更新索引，同步到 Git 远端。
+
+**调用方式**：
+
+```text
+/brain-ingest
+```
+
+无需参数，Agent 从当前对话中自动提炼稳定结论。
+
+**执行流程**：
+
+1. 判断对话是否已形成稳定结论，没有则停止。
+2. 判断通用知识（写入 `global_concepts/`）还是项目专属（写入 `project_exclusives/<project>/`）。
+3. 一文一议，文件名为名词化主题（如 `memory-weight-decay.md`）。
+4. 写入完整 V2 frontmatter + 结构化正文。
+5. 原子写入：先写 `.tmp`，加 `fcntl.LOCK_EX` 锁，`os.rename` 原子移动。
+6. 更新 `wiki/index.md` 对应分区。
+7. 手动执行一次 `hot_refresh.py`（watcher 未运行时）。
+8. 执行 `vault_sync.sh` 同步。
+
+**笔记写入禁令**：
+
+- 禁止把项目知识写入 `global_concepts`。
+- 禁止多主题合并到同一文件。
+- 禁止原样搬运整段对话。
+
+**案例**：
+
+场景：当前对话确定了「EWMA 访问频率衰减公式」，结论稳定可复用。
+
+```text
+/brain-ingest
+```
+
+输出：
+```
+已新增笔记：/Users/za-stanlexu/Documents/member/member/wiki/project_exclusives/member/ewma-access-decay.md
+知识归属：member
+核心结论：EWMA 以 14 天为半衰期衰减历史访问频率，每次激活增加 1.0，上限 20
+同步结果：成功
+```
+
+**同名文件行为**：若同主题笔记已存在，Agent 会覆盖更新正文，`access_count`/`ewma_access`/`current_weight` 等激活字段**保留不重置**，`last_modified` 更新为今天。这是"1 条记录原地更新"，不产生历史版本。
+
+---
+
+### 13.7 `/brain-consolidate` — 权重衰减与归档
+
+**作用**：扫描全库所有 active 笔记，计算最新权重，对低于 `forget_threshold=0.15` 的笔记执行冷冻归档（移入 `archive/`）。
+
+**调用方式**：
+
+```text
+/brain-consolidate
+```
+
+无需参数。底层执行：
+
+```bash
+python3 scripts/memory_manager.py
+```
+
+预览不写文件：
+
+```bash
+python3 scripts/memory_manager.py --dry-run
+```
+
+**执行动作**：
+
+| 动作 | 条件 |
+| --- | --- |
+| 补全 V2 frontmatter | 无 frontmatter 或 `weight_schema_version != 2` |
+| 标记 `status: incomplete` | 发现同名 `.tmp` 孤儿文件 |
+| 更新 `current_weight` | 所有 active 笔记 |
+| 首次迁移宽限 | V1→V2 升级时不立即归档，只更新字段 |
+| 冷冻归档 | 非首次迁移且 `current_weight < 0.15` |
+| 刷新 `wiki/index.md` | 非 dry-run 时 |
+
+**归档位置**：`archive/global_concepts/` 或 `archive/project_exclusives/<project>/`（镜像原路径结构）。
+
+**案例**：
+
+```text
+# 先预览
+/brain-consolidate --dry-run
+→ 脚本输出 JSON：{ "scanned": 12, "archived": 2, "updated": 8, ... }
+
+# 实际执行
+/brain-consolidate
+→ 输出：
+  归档结果：
+  - wiki/project_exclusives/member/old-note.md | 权重=0.08
+  保留汇总：10
+  异常项：无
+```
+
+**注意**：已归档笔记不能被自动复活，需手动从 `archive/` 移回并修改 `status: active`。
+
+---
+
+### 13.8 共用参数速查
+
+| 参数 | 适用命令 | 作用 |
+| --- | --- | --- |
+| `--scope project` | query/query-rg/search/search-rg | 限定当前项目 + global_concepts |
+| `--scope global` | query/query-rg/search/search-rg | 全库所有项目 |
+| `--dry` | query/query-rg/search/search-rg | 关闭脱水，读笔记原文 |
+| `--dry-run` | consolidate（脚本层） | 预览归档结果，不写文件 |
+| `--boost 1.4` | 激活脚本（手动调用） | 高优先级 boost，有效期 7 天 |
+
+---
+
+## 14. 使用原则
 
 - 稳定结论才入库，临时想法不要污染知识库。
 - 一篇笔记只承载一个概念。

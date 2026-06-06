@@ -1,5 +1,5 @@
 # 知识热度榜 Top 20 — 项目 member
-> 更新时间：2026-06-06 10:51　　数据来源：current_weight + access_count
+> 更新时间：2026-06-06 11:26　　数据来源：current_weight + access_count
 > [!WARNING]
 > 本文件由 `hot_refresh.py` 自动生成，禁止手动编辑。
 
@@ -82,4 +82,15 @@
   - CLI 用法
 - summary模式
 - precise模式
+  - 关联
+
+### 7. [[brain-commands-reference]] — 记忆仓库对外命令参考  ·  🧠 1.000  ·  📊 1 次
+- 记忆仓库对外命令参考
+  - 结论
+  - 命令总览
+  - 核心区分
+  - 参数速查
+  - 底层调用链（简要）
+  - ingest 同名文件行为
+  - consolidate 归档宽限
   - 关联

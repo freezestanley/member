@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "dashboards/项目 member 记忆.md",
+                "file": "wiki/project_exclusives/atest/global-status-enum.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "项目 member 记忆"
+              "title": "global-status-enum"
             }
           }
         ]
@@ -185,10 +185,16 @@
   },
   "active": "57969b081412bd1b",
   "lastOpenFiles": [
+    "wiki/project_exclusives/member/brain-commands-reference.md",
+    "wiki/project_exclusives/member/brain-commands-reference.md.tmp",
+    "canvases/LLM-Brain-OS.canvas",
+    "wiki/project_exclusives/atest/global-status-enum.md",
+    "wiki/project_exclusives/atest",
+    "dashboards/归档候选.md",
+    "dashboards/低权重待处理.md",
+    "dashboards/项目 member 记忆.md",
     "dashboards/链接治理.md",
     "dashboards/记忆治理总览.md",
-    "dashboards/低权重待处理.md",
-    "dashboards/归档候选.md",
     "dashboards/缺少 aliases.md",
     "wiki/project_exclusives/member/hot-memory-dual-track.md",
     "wiki/project_exclusives/member/obsidian-ux-layer.md",
@@ -198,7 +204,6 @@
     "wiki/project_exclusives/member/llm-brain-os-architecture.md.tmp",
     "wiki/project_exclusives/member/hot.md",
     "wiki/project_exclusives/member/obsidian-ux-layer.md.tmp",
-    "canvases/LLM-Brain-OS.canvas",
     "README.md",
     "欢迎.md",
     "双链.md",
@@ -213,14 +218,9 @@
     "templates/concept-project.md",
     "templates/concept-global.md",
     "templates",
-    "scripts/obsidian_audit.py",
     "docs/obsidian-first-memory-vault-manual.md",
-    "dashboards/项目 member 记忆.md",
     "dashboards/最近激活.md",
-    "dashboards",
     "docs/plans/2026-06-06-obsidian-first-memory-vault-implementation.md",
-    "docs/plans/2026-06-06-obsidian-first-memory-vault-design.md",
-    "docs/memory-repository-user-manual.md",
-    "docs/memory-repository-technical-solution.md"
+    "docs/plans/2026-06-06-obsidian-first-memory-vault-design.md"
   ]
 }
