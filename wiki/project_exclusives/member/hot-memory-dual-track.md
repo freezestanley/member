@@ -8,9 +8,23 @@ code_symbols: [hot_refresh.py, hot_watcher.sh, collect_notes, render_hot, atomic
 initial_weight: 1.0
 current_weight: 1.0
 last_activated: 2026-06-06
-access_count: 4
+access_count: 5
 status: active
 superseded_by: ""
+weight_schema_version: 2
+category: spec
+importance: 3
+ewma_access: 0.0
+last_boost: 1.0
+last_boosted_at: ""
+last_weight_migrated_at: 2026-06-06
+tags:
+  - memory/active
+  - type/concept
+  - project/member
+  - category/spec
+cssclasses:
+  - memory-note
 ---
 
 # 热记忆双轨路由
@@ -56,7 +70,7 @@ def atomic_write(target, content, lock_file):
 
 ## 防循环触发
 
-`hot_watcher.sh` 排除 `hot.md` / `global_hot.md` 自身变化，避免刷新死循环。Cooldown 2秒防高频重复触发。
+`hot_watcher.sh` 排除 `hot.md` / `global_hot.md` 自身变化，避免刷新死循环。Cooldown 2 秒防高频重复触发。
 
 ## 过滤规则
 
@@ -73,8 +87,8 @@ any_hot_lock_held()  # 检查所有 .hot_refresh*.lock 是否被持有
 
 ## 局限性
 
-- `fswatch` 是 macOS 专属，Linux 需替换为 `inotifywait`
-- watcher 进程退出后热记忆停止自动刷新（需手动重启或加入 launchd）
+- `fswatch` 是 macOS 专属，Linux 需替换为 `inotifywait`。
+- watcher 进程退出后热记忆停止自动刷新（需手动重启或加入 launchd）。
 
 ## 手动触发
 
@@ -87,3 +101,4 @@ python3 scripts/hot_refresh.py --project member
 
 - [[llm-brain-os-architecture]]
 - [[memory-weight-decay]]
+- [[obsidian-ux-layer]]

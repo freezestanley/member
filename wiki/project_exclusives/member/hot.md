@@ -1,9 +1,9 @@
 # 知识热度榜 Top 20 — 项目 member
-> 更新时间：2026-06-06 10:44　　数据来源：current_weight + access_count
+> 更新时间：2026-06-06 10:51　　数据来源：current_weight + access_count
 > [!WARNING]
 > 本文件由 `hot_refresh.py` 自动生成，禁止手动编辑。
 
-### 1. [[hot-memory-dual-track]] — 热记忆双轨路由  ·  🧠 1.000  ·  📊 4 次
+### 1. [[hot-memory-dual-track]] — 热记忆双轨路由  ·  🧠 1.000  ·  📊 5 次
 - 热记忆双轨路由
   - 结论
   - 双轨路由逻辑
@@ -19,7 +19,7 @@
   - 手动触发
   - 关联
 
-### 2. [[bm25-memory-retrieval-pipeline]] — BM25 记忆检索管道  ·  🧠 1.000  ·  📊 3 次
+### 2. [[bm25-memory-retrieval-pipeline]] — BM25 记忆检索管道  ·  🧠 1.000  ·  📊 4 次
 - BM25 记忆检索管道
   - 结论
   - 检索路径
@@ -32,22 +32,24 @@
   - 局限性
   - 关联
 
-### 3. [[llm-brain-os-architecture]] — LLM-Brain OS 系统架构  ·  🧠 1.000  ·  📊 3 次
+### 3. [[llm-brain-os-architecture]] — LLM-Brain OS 系统架构  ·  🧠 1.000  ·  📊 4 次
 - LLM-Brain OS 系统架构
   - 核心定位
-  - 分层架构（6层）
+  - 分层架构（7层）
   - 业务流程（全链路）
   - 技术特性
+  - frontmatter V2 schema 关键字段
   - 关联
 
-### 4. [[memory-weight-decay]] — 记忆权重衰减公式  ·  🧠 1.000  ·  📊 3 次
-- 记忆权重衰减公式
+### 4. [[memory-weight-decay]] — 记忆权重衰减公式（V2）  ·  🧠 1.000  ·  📊 4 次
+- 记忆权重衰减公式（V2）
   - 结论
-  - 衰减公式
+  - V2 权重公式
+  - 配置文件
+  - EWMA 更新公式
   - 生命周期状态机
-  - 原子归档流程（archive_with_backlink_update）
+  - 激活刷新（activation_writer.py）
   - 孤儿 .tmp 检测
-  - 激活刷新触发时机
   - 自动生成文件豁免
   - 已知局限
   - 关联

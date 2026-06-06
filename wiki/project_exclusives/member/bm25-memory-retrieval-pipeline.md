@@ -1,16 +1,30 @@
 ---
 type: concept
 created_at: 2026-06-05
-last_modified: 2026-06-05
+last_modified: 2026-06-06
 project: member
 aliases: [BM25检索, 记忆检索管道, bm25搜索]
 code_symbols: [bm25_search.py, build_or_load_cache, clean_and_tokenize, collect_md_paths]
 initial_weight: 1.0
 current_weight: 1.0
-last_activated: 2026-06-05
-access_count: 3
+last_activated: 2026-06-06
+access_count: 4
 status: active
 superseded_by: ""
+weight_schema_version: 2
+category: spec
+importance: 3
+ewma_access: 0.0
+last_boost: 1.0
+last_boosted_at: ""
+last_weight_migrated_at: 2026-06-06
+tags:
+  - memory/active
+  - type/concept
+  - project/member
+  - category/spec
+cssclasses:
+  - memory-note
 ---
 
 # BM25 记忆检索管道
@@ -45,7 +59,7 @@ Cache 结构（pickle，存于 `_inbox/.bm25_cache.pkl`）：
 ```
 
 **重建条件：**
-- cache文件不存在
+- cache 文件不存在
 - 任意文件 mtime 与缓存记录不一致
 - 有新文件未在缓存中
 
@@ -76,9 +90,10 @@ python3 bm25_search.py --rebuild-cache
 
 ## 局限性
 
-- 词频模型，不理解语义：查"脱水"找不到"context dehydration"
-- jieba 在专有技术术语上精度有限
-- aliases 注入是主要补偿手段
+- 词频模型，不理解语义：查"脱水"找不到"context dehydration"。
+- jieba 在专有技术术语上精度有限。
+- aliases 注入是主要补偿手段。
+- cache 写入无文件锁，多人/并发场景需增加 `.bm25_cache.lock`。
 
 ## 关联
 
