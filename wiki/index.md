@@ -17,3 +17,6 @@
 
 ## project_exclusives/test
 - [前端开发规范 — 技术栈](project_exclusives/test/frontend-tech-stack.md) — test 项目前端技术栈约定：React + antd，禁用 @ant-design/icons
+
+## project_exclusives/member
+- [Obsidian UX 层](project_exclusives/member/obsidian-ux-layer.md) — Obsidian 原生 UX 层架构设计，含 templates、dashboards、bases、canvas 和 obsidian_audit.py

@@ -25,5 +25,9 @@
 		{"id":"e9","fromNode":"weight","fromSide":"right","toNode":"hot-routing","toSide":"left"},
 		{"id":"e10","fromNode":"architecture","fromSide":"right","toNode":"technical-solution","toSide":"left"},
 		{"id":"e11","fromNode":"technical-solution","fromSide":"right","toNode":"manual","toSide":"left"}
-	]
+	],
+	"metadata":{
+		"version":"1.0-1.0",
+		"frontmatter":{}
+	}
 }

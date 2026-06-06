@@ -6,7 +6,7 @@
 
 ## 1. 快速理解
 
-这是一个本地 Markdown 记忆库。你把稳定的知识写成单主题笔记，系统通过 BM25、正文精确检索、aliases、权重衰减和热记忆文件，在后续对话中把相关笔记召回给 LLM 使用。
+这是一个本地 Markdown 记忆库，以 Obsidian 作为治理界面。你把稳定的知识写成单主题笔记，系统通过 BM25、正文精确检索、aliases、权重衰减和热记忆文件，在后续对话中把相关笔记召回给 LLM 使用。Obsidian 提供 Dataview 看板、Templater 入库模板、Bases 属性视图和 Canvas 系统地图，让人工治理不依赖命令行。
 
 最常用的动作只有五个：
 
@@ -43,7 +43,9 @@ PyYAML
 
 | 工具 | 用途 | 是否必需 |
 | --- | --- | --- |
-| Obsidian | 浏览 wiki、双链和热榜 | 推荐 |
+| Obsidian | 浏览 wiki、看板、双链和热榜 | 推荐 |
+| Obsidian Dataview 插件 | 动态治理看板 | 看板功能需要 |
+| Obsidian Templater 插件 | 标准化入库模板 | 模板功能需要 |
 | fswatch | 自动监听 wiki 变化并刷新 hot 文件 | 自动热榜需要 |
 | Git | 同步知识库 | 同步需要 |
 | MemPalace CLI | 挖掘历史会话 | 历史会话导入需要 |
@@ -70,6 +72,15 @@ brew install fswatch
 - `scripts/palace_bridge.sh`
 - `scripts/vault_sync.sh`
 
+### 2.4 Obsidian CSS snippet 启用
+
+视觉增强（热笔记绿色边框、冷笔记降透明等）需要手动启用 CSS snippet：
+
+1. 打开 Obsidian > 设置 > Appearance > CSS snippets。
+2. 找到 `memory-vault`，切换为启用状态。
+
+该文件位于 `.obsidian/snippets/memory-vault.css`，不会被脚本自动激活。
+
 ## 3. 目录怎么用
 
 ```text
@@ -88,7 +99,7 @@ wiki/project_exclusives/<project>/
 archive/
 ```
 
-放被冷冻归档的笔记。当前默认检索不会扫描归档区。
+放被冷冻归档的笔记（根目录下，含 `global_concepts/` 和 `project_exclusives/` 子目录镜像）。当前默认检索不会扫描归档区。
 
 ```text
 _inbox/
@@ -108,7 +119,31 @@ wiki/index.md
 wiki/log.md
 ```
 
-`index.md` 是中央索引，`log.md` 是查询日志。
+`index.md` 是中央索引，`log.md` 是查询日志，均由脚本维护，不要手动编辑。
+
+```text
+templates/
+```
+
+Templater 入库模板，Obsidian 中通过 Templater 插件使用。可选五种类型：concept-global、concept-project、decision、pitfall、usage-manual。
+
+```text
+dashboards/
+```
+
+Dataview 治理看板，Obsidian 中打开可查看动态表格。包含：记忆治理总览、低权重待处理、最近激活、缺少 aliases、项目 member 记忆、归档候选、链接治理。
+
+```text
+bases/
+```
+
+Obsidian Bases 属性视图（需 Obsidian 1.6+）。包含 active-memory、project-memory、archive-candidates、recent-activations、alias-needed 五个视图。
+
+```text
+canvases/LLM-Brain-OS.canvas
+```
+
+系统架构 Canvas，展示各模块关系和核心文件链接。在 Obsidian 中打开可视化浏览。
 
 ## 4. 新增一篇记忆笔记
 
@@ -128,7 +163,25 @@ wiki/log.md
 - 正文先写结论，再写边界、细节、示例。
 - 相关概念尽量使用 `[[概念名]]`。
 
-### 4.2 手动创建笔记模板
+### 4.2 通过 Obsidian Templater 入库
+
+在 Obsidian 中选择模板快速创建标准格式笔记：
+
+1. 打开 Command Palette（`Cmd+P`）。
+2. 输入 `Templater: Create new note from template`。
+3. 选择对应模板：
+
+| 场景 | 模板 |
+| --- | --- |
+| 跨项目通用概念 | `concept-global.md` |
+| 当前项目专属概念 | `concept-project.md` |
+| 技术或产品决策 | `decision.md` |
+| 踩坑记录 | `pitfall.md` |
+| 使用说明 | `usage-manual.md` |
+
+模板自动填充创建日期和修改日期，正文含标准结构（结论/边界/细节/关联）。
+
+### 4.3 手动创建笔记模板
 
 ```markdown
 ---
@@ -151,6 +204,13 @@ ewma_access: 0.0
 last_boost: 1.0
 last_boosted_at: ""
 last_weight_migrated_at: 2026-06-06
+tags:
+  - memory/active
+  - type/concept
+  - project/member
+  - category/general
+cssclasses:
+  - memory-note
 ---
 
 # 笔记标题
@@ -178,7 +238,9 @@ last_weight_migrated_at: 2026-06-06
 | --- | --- |
 | `aliases` | 放中文名、英文名、缩写、内部俗称，提升检索召回 |
 | `category` | 可选 `strategy`、`fact`、`decision`、`log`、`spec`、`general` |
-| `importance` | `1..5`，越重要半衰期越长 |
+| `importance` | `1..5`，越重要半衰期越长（影响权重衰减速度） |
+| `tags` | 格式 `memory/<status>`、`type/<type>`、`project/<project>`、`category/<category>` |
+| `cssclasses` | `memory-note` 为默认；可叠加 `memory-hot`、`memory-cold`、`memory-decision`、`memory-pitfall` |
 | `status` | 正常为 `active`，不要手动把归档笔记改回 active |
 
 ## 5. 查询知识库
@@ -242,12 +304,50 @@ python3 scripts/rg_body_search.py "BrainOS" \
 适合：
 
 - 想知道某个主题存在于哪些公共规范、项目笔记或历史会话中。
-- 想区分“通用知识”还是“项目专属经验”。
+- 想区分"通用知识"还是"项目专属经验"。
 - 想做跨项目资产盘点。
 
-## 6. 激活、权重和热记忆
+## 6. Obsidian 治理界面
 
-### 6.1 什么是激活
+### 6.1 看板入口
+
+在 Obsidian 中打开 `dashboards/记忆治理总览.md`，可跳转到所有治理看板：
+
+- **低权重待处理**：`current_weight < 0.3` 的 active 笔记，需补充 aliases 或提升重要性。
+- **最近激活**：过去 7 天被查询命中的笔记。
+- **缺少 aliases**：没有设置别名的笔记，影响检索召回率。
+- **项目 member 记忆**：当前项目全部 active 笔记。
+- **归档候选**：`current_weight < 0.15`，下次 `brain-consolidate` 会被移入 `archive/`。
+- **链接治理**：孤儿笔记（无出链）和弱连接笔记。
+
+### 6.2 Canvas 系统地图
+
+打开 `canvases/LLM-Brain-OS.canvas`，可视化浏览系统各模块关系、核心文件链接和数据流向。
+
+### 6.3 Bases 属性视图
+
+打开 `bases/` 下任意 `.base` 文件，Obsidian 会以表格形式展示笔记属性。支持排序、过滤、列定制。
+
+### 6.4 Agent 审计脚本
+
+Agent 可程序化运行 `obsidian_audit.py` 检查 alias 缺口和低权重候选：
+
+```bash
+python3 scripts/obsidian_audit.py \
+  --wiki-root wiki \
+  --canvas canvases/LLM-Brain-OS.canvas \
+  --threshold 0.3
+```
+
+输出 JSON，包含：
+
+- `alias_gaps`：缺少 aliases 的 active 笔记列表。
+- `low_weight_candidates`：权重低于阈值的 active 笔记，按权重升序。
+- `canvas_files`：Canvas 中所有 file 节点路径。
+
+## 7. 激活、权重和热记忆
+
+### 7.1 什么是激活
 
 当一篇笔记被查询命中并用于回答时，系统会激活它：
 
@@ -274,7 +374,17 @@ python3 scripts/activation_writer.py \
   --boost 1.4
 ```
 
-### 6.2 热记忆文件
+boost 关键词（来自 `config/weight_config.yml`）：
+
+| 类型 | 关键词 | boost 值 |
+| --- | --- | --- |
+| high | 重要、紧急、开会、决策、上线 | 1.4 |
+| medium | 参考、复习、回顾 | 1.2 |
+| default | 其他 | 1.0 |
+
+boost 有效期为 7 天（`boost_ttl_days`）。
+
+### 7.2 热记忆文件
 
 全局热记忆：
 
@@ -288,7 +398,7 @@ wiki/global_hot.md
 wiki/project_exclusives/member/hot.md
 ```
 
-自动刷新 watcher：
+自动刷新 watcher（需 macOS `fswatch`）：
 
 ```bash
 bash scripts/hot_watcher.sh
@@ -303,9 +413,25 @@ python3 scripts/hot_refresh.py --project member
 
 不要手动编辑 hot 文件，它们会被脚本覆盖。
 
-## 7. 执行记忆整理和归档
+### 7.3 权重衰减规则
 
-### 7.1 Dry-run 预览
+权重由 `category` 和 `importance` 决定的半衰期驱动：
+
+| category | 默认半衰期 |
+| --- | --- |
+| `spec` | 120 天 |
+| `strategy` | 90 天 |
+| `decision` | 75 天 |
+| `fact` | 60 天 |
+| `general` | 30 天 |
+| `log` | 7 天 |
+
+`importance` 为 1~5，值越高，实际半衰期越长（`importance_k = 0.6`）。  
+`forget_threshold = 0.15`，低于该值在下次整理时被归档。
+
+## 8. 执行记忆整理和归档
+
+### 8.1 Dry-run 预览
 
 ```bash
 python3 scripts/memory_manager.py --dry-run
@@ -313,7 +439,7 @@ python3 scripts/memory_manager.py --dry-run
 
 会输出 JSON 汇总，不写文件、不刷新索引。
 
-### 7.2 实际整理
+### 8.2 实际整理
 
 ```text
 /brain-consolidate
@@ -327,7 +453,7 @@ python3 scripts/memory_manager.py
 
 整理动作包括：
 
-- 给缺 frontmatter 的笔记补齐 schema。
+- 给缺 frontmatter 的笔记补齐 V2 schema（含 `tags`、`cssclasses`）。
 - 补齐 `status` 和 `superseded_by`。
 - 迁移 V2 权重字段。
 - 计算 `current_weight`。
@@ -337,7 +463,7 @@ python3 scripts/memory_manager.py
 
 首次 V2 迁移有归档宽限：第一次扫描只更新字段和权重，不立刻归档；下一次扫描仍低于阈值才会移动到 `archive/`。
 
-## 8. 导入历史会话
+## 9. 导入历史会话
 
 使用：
 
@@ -354,7 +480,7 @@ bash scripts/palace_bridge.sh
 
 导入后仍需要人工或 Agent 提炼稳定结论，再通过 `/brain-ingest` 写成结构化笔记。
 
-## 9. 同步到 Git
+## 10. 同步到 Git
 
 ```bash
 bash scripts/vault_sync.sh
@@ -374,9 +500,9 @@ BRAIN_SYNC_BRANCH=feat0602 bash scripts/vault_sync.sh
 
 注意：该脚本会 rebase，并在有变更时自动 commit 和 `push --force-with-lease`。更适合个人私有知识库。
 
-## 10. 常见问题
+## 11. 常见问题
 
-### 10.1 查不到明明存在的内容
+### 11.1 查不到明明存在的内容
 
 处理顺序：
 
@@ -388,14 +514,14 @@ BRAIN_SYNC_BRANCH=feat0602 bash scripts/vault_sync.sh
 python3 scripts/rg_body_search.py "关键词" wiki/global_concepts wiki/project_exclusives/member
 ```
 
-4. 给笔记补充 `aliases`。
+4. 给笔记补充 `aliases`（中文名、英文名、缩写都加）。
 5. 重建 BM25 缓存：
 
 ```bash
 python3 scripts/bm25_search.py --rebuild-cache
 ```
 
-### 10.2 hot 文件没有更新
+### 11.2 hot 文件没有更新
 
 检查 watcher 是否运行：
 
@@ -410,11 +536,11 @@ python3 scripts/hot_refresh.py --global
 python3 scripts/hot_refresh.py --project member
 ```
 
-### 10.3 笔记被标记 incomplete
+### 11.3 笔记被标记 incomplete
 
 通常是写入时留下了同名 `.tmp` 文件。先检查该 `.tmp` 内容，确认是否需要恢复；不要直接让 incomplete 笔记参与查询。处理完后再手动修正状态或重新入库。
 
-### 10.4 激活失败
+### 11.4 激活失败
 
 常见原因：
 
@@ -424,13 +550,13 @@ python3 scripts/hot_refresh.py --project member
 - `status` 是 `archived/deprecated/incomplete`。
 - 路径是逃逸出 wiki 的软链。
 
-### 10.5 归档笔记怎么恢复
+### 11.5 归档笔记怎么恢复
 
 当前系统没有自动复活流程。建议手动确认归档笔记仍有价值后：
 
 1. 从 `archive/` 找到对应笔记。
 2. 复制或移动回正确的 `wiki/global_concepts/` 或 `wiki/project_exclusives/<project>/`。
-3. 将 `status` 改为 `active`。
+3. 将 `status` 改为 `active`，同步更新 `tags: [memory/active, ...]`。
 4. 更新日期和权重字段。
 5. 运行：
 
@@ -439,7 +565,22 @@ python3 scripts/memory_manager.py --dry-run
 python3 scripts/memory_manager.py
 ```
 
-## 11. 日常维护建议
+### 11.6 Dataview 看板不显示
+
+确认：
+
+- Obsidian 已安装并启用 Dataview 插件。
+- 插件设置中 `Enable JavaScript Queries` 和 `Inline Query Prefix` 已打开。
+- 笔记存放路径与 dashboard 查询路径一致（均以 `wiki` 为前缀）。
+
+### 11.7 Templater 模板中的日期不生效
+
+确认：
+
+- Obsidian 已安装并启用 Templater 插件。
+- 使用 `Templater: Create new note from template` 命令创建笔记，而不是直接复制粘贴模板内容。
+
+## 12. 日常维护建议
 
 每天或每次大量写入后：
 
@@ -456,6 +597,8 @@ python3 scripts/memory_manager.py --dry-run
 python3 scripts/memory_manager.py
 ```
 
+或在 Obsidian 中打开 `dashboards/记忆治理总览.md` 检查治理看板，按需补充 aliases、提升重要性或手动归档。
+
 同步前：
 
 ```bash
@@ -463,12 +606,13 @@ git status --short
 bash scripts/vault_sync.sh
 ```
 
-## 12. 使用原则
+## 13. 使用原则
 
 - 稳定结论才入库，临时想法不要污染知识库。
 - 一篇笔记只承载一个概念。
 - `aliases` 要主动维护，它直接影响召回率。
-- 不手动编辑自动生成文件：`global_hot.md`、项目 `hot.md`、`log.md`。
+- 不手动编辑自动生成文件：`global_hot.md`、项目 `hot.md`、`log.md`、`index.md`。
 - 归档不是删除，是降低默认召回噪音。
 - 查询命中后让 `activation_writer.py` 写回，不要手动改访问计数。
 - 技术方案、历史草稿和最终可执行文档要分开放，避免规格旧文覆盖当前实现事实。
+- `tags` 和 `cssclasses` 由 templates 自动填充，保持格式一致，不要随意改动规范值。
